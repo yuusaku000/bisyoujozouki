@@ -162,6 +162,27 @@ class _HomeTabState extends State<HomeTab> {
                     ),
                   ],
                 ),
+                // 何が効いたのかを残す。合計だけだと、明日の行動が変わらない。
+                if (result.coins.goalAchieved || result.coins.habits > 0) ...[
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      if (result.coins.goalAchieved)
+                        _coinChip(
+                          '目標達成 +${formatCoins(result.coins.goalBonus)}',
+                          AppColors.rose,
+                        ),
+                      if (result.coins.habits > 0)
+                        _coinChip(
+                          'いたわり×${result.coins.multiplier.toStringAsFixed(1)}'
+                          ' +${formatCoins(result.coins.habitBonus)}',
+                          AppColors.gold,
+                        ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 14),
                 for (final organ in state.party)
                   Padding(
@@ -233,6 +254,25 @@ class _HomeTabState extends State<HomeTab> {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _coinChip(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.55)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+          color: color,
         ),
       ),
     );

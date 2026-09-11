@@ -73,7 +73,54 @@ void main() {
   group('コイン', () {
     test('1歩1コイン、階段はボーナス', () {
       const input = DailyInput(steps: 3000, stairs: 4);
-      expect(input.coinsEarned, 3000 + 4 * 50);
+      expect(input.coinsFor(5000).total, 3000 + 4 * 50);
+    });
+
+    test('目標に届くとボーナスが乗る', () {
+      const just = DailyInput(steps: 5000);
+      const short = DailyInput(steps: 4999);
+
+      expect(just.coinsFor(5000).goalBonus, 5000 ~/ 4);
+      expect(short.coinsFor(5000).goalBonus, 0);
+      expect(just.coinsFor(5000).total, 5000 + 1250);
+    });
+
+    test('いたわり3つで1.6倍', () {
+      const none = DailyInput(steps: 1000);
+      const one = DailyInput(steps: 1000, ateWell: true);
+      const all = DailyInput(
+        steps: 1000,
+        ateWell: true,
+        rested: true,
+        sleptWell: true,
+      );
+
+      expect(none.coinsFor(9999).total, 1000);
+      expect(one.coinsFor(9999).total, 1200);
+      expect(all.coinsFor(9999).total, 1600);
+      expect(all.coinsFor(9999).habitBonus, 600);
+    });
+
+    test('倍率は目標ボーナスにも掛かる', () {
+      const day = DailyInput(
+        steps: 5000,
+        stairs: 2,
+        ateWell: true,
+        rested: true,
+        sleptWell: true,
+      );
+      final coins = day.coinsFor(5000);
+
+      expect(coins.base, 5000 + 100 + 1250);
+      expect(coins.total, (coins.base * 1.6).round());
+    });
+
+    test('動いていなければ倍率をかけても0のまま', () {
+      // 自己申告だけで稼げると、歩く理由がなくなる
+      const lazy = DailyInput(ateWell: true, rested: true, sleptWell: true);
+
+      expect(lazy.coinsFor(2000).multiplier, 1.6);
+      expect(lazy.coinsFor(2000).total, 0);
     });
 
     test('人間にありえない歩数は上限で止める', () {

@@ -15,16 +15,19 @@ import 'organ.dart';
 /// 1日を締めたときに何が起きたか。画面で結果を見せるために返す。
 class DayResult {
   const DayResult({
-    required this.coinsEarned,
+    required this.coins,
     required this.healthDeltas,
-    required this.goalAchieved,
     required this.newStepGoal,
     required this.clearedMissions,
   });
 
-  final int coinsEarned;
+  /// もらったコインの内訳。何が効いたのかを結果画面で見せる。
+  final CoinBreakdown coins;
+
   final Map<String, int> healthDeltas;
-  final bool goalAchieved;
+
+  int get coinsEarned => coins.total;
+  bool get goalAchieved => coins.goalAchieved;
 
   /// 目標が変わった場合のみ値が入る。
   final int? newStepGoal;
@@ -251,11 +254,10 @@ class GameState {
       tickets += m.reward.tickets;
     }
 
-    final earned = today.coinsEarned;
-    final achieved = today.steps >= stepGoal;
+    final earned = today.coinsFor(stepGoal);
 
-    coins += earned;
-    final newGoal = _updateGoal(achieved);
+    coins += earned.total;
+    final newGoal = _updateGoal(earned.goalAchieved);
 
     dayCount++;
     today = const DailyInput();
@@ -263,9 +265,8 @@ class GameState {
     missionIds = <String>[];
 
     return DayResult(
-      coinsEarned: earned,
+      coins: earned,
       healthDeltas: deltas,
-      goalAchieved: achieved,
       newStepGoal: newGoal,
       clearedMissions: cleared,
     );

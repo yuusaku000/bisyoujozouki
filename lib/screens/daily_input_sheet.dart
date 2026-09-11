@@ -134,37 +134,7 @@ class _DailyInputSheetState extends State<DailyInputSheet> {
                       setState(() => _input = _input.copyWith(sleptWell: v)),
                 ),
               const SizedBox(height: 20),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: AppColors.hollow,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: AppColors.goldDim.withValues(alpha: 0.6),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    const Text(
-                      'もらえるコイン',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textMuted,
-                      ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      formatCoins(_input.coinsEarned),
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
-                        color: AppColors.gold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              _coinPanel(),
               const SizedBox(height: 16),
               JewelButton(
                 label: '1日を終える',
@@ -173,6 +143,112 @@ class _DailyInputSheetState extends State<DailyInputSheet> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  /// 内訳を出す。合計だけだと、どれが効いたのか分からない。
+  Widget _coinPanel() {
+    final coins = _input.coinsFor(widget.stepGoal);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+      decoration: BoxDecoration(
+        color: AppColors.hollow,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.goldDim.withValues(alpha: 0.6)),
+      ),
+      child: Column(
+        children: [
+          _coinRow('歩数', coins.fromSteps),
+          if (coins.fromStairs > 0) _coinRow('階段', coins.fromStairs),
+          if (coins.goalAchieved)
+            _coinRow('目標達成', coins.goalBonus, color: AppColors.rose),
+          if (coins.habits > 0) ...[
+            const SizedBox(height: 6),
+            _multiplierRow(coins),
+          ],
+          const Divider(height: 20, color: AppColors.goldDim),
+          Row(
+            children: [
+              const Text(
+                'もらえるコイン',
+                style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+              ),
+              const Spacer(),
+              Text(
+                formatCoins(coins.total),
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.gold,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _coinRow(String label, int value, {Color? color}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: color ?? AppColors.textMuted,
+              fontWeight: color == null ? FontWeight.w400 : FontWeight.w800,
+            ),
+          ),
+          const Spacer(),
+          Text(
+            '+${formatCoins(value)}',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: color ?? AppColors.textMuted,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 3つの習慣は数字に出ない。倍率という形にして、効いていることを見せる。
+  Widget _multiplierRow(CoinBreakdown coins) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        gradient: AppColors.roseGradient,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.auto_awesome, size: 14, color: Colors.white),
+          const SizedBox(width: 6),
+          Text(
+            'いたわりボーナス ${coins.habits}/3',
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+            ),
+          ),
+          const Spacer(),
+          Text(
+            '×${coins.multiplier.toStringAsFixed(1)}',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+              color: Colors.white,
+            ),
+          ),
+        ],
       ),
     );
   }

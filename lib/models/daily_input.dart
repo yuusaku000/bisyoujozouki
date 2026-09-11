@@ -43,8 +43,20 @@ class DailyInput {
     sleptWell: sleptWell ?? this.sleptWell,
   );
 
+  /// 何もしていない日は0。倍率は「動いた分」に掛かるだけで、
+  /// それ自体はコインを生まない。歩かずに稼げると、歩く理由がなくなる。
+  CoinBreakdown coinsFor(int stepGoal) => CoinBreakdown(
+    fromSteps: steps,
+    fromStairs: stairs * stairsCoin,
+    goalBonus: steps >= stepGoal ? stepGoal ~/ goalBonusDivisor : 0,
+    habits: [ateWell, rested, sleptWell].where((v) => v).length,
+  );
+
   /// 歩数1歩につき1コイン。階段は登るのがしんどい分だけ割がいい。
-  int get coinsEarned => steps + stairs * 50;
+  static const int stairsCoin = 50;
+
+  /// 目標達成でもらえる分。目標が上がれば、ごほうびも上がる。
+  static const int goalBonusDivisor = 4;
 
   Map<String, dynamic> toJson() => {
     'steps': steps,
@@ -61,6 +73,40 @@ class DailyInput {
     rested: json['rested'] as bool? ?? false,
     sleptWell: json['sleptWell'] as bool? ?? false,
   );
+}
+
+/// その日のコインの内訳。合計だけ出すと、何が効いたのか分からない。
+class CoinBreakdown {
+  const CoinBreakdown({
+    required this.fromSteps,
+    required this.fromStairs,
+    required this.goalBonus,
+    required this.habits,
+  });
+
+  final int fromSteps;
+  final int fromStairs;
+  final int goalBonus;
+
+  /// たべた・休めた・寝た のうち、できた数。
+  final int habits;
+
+  /// ひとつごとに2割増し。3つ揃えば1.6倍。
+  ///
+  /// 歩数と違ってこの3つは自己申告で、数字にも出ない。
+  /// 倍率という分かりやすい形にしないと、報告する意味を感じられない。
+  static const double perHabit = 0.2;
+
+  double get multiplier => 1 + perHabit * habits;
+
+  int get base => fromSteps + fromStairs + goalBonus;
+
+  int get total => (base * multiplier).round();
+
+  /// 倍率で上乗せされた分。
+  int get habitBonus => total - base;
+
+  bool get goalAchieved => goalBonus > 0;
 }
 
 /// 健康度の増減。達成すれば伸び、サボれば落ちる。
