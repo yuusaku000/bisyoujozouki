@@ -55,7 +55,38 @@ const Enemy kBoss = Enemy(
 );
 
 /// 10ステージごとにボス。それ以外は通常の敵が順に出る。
-Enemy enemyForStage(int stage) => stage % 10 == 0 ? kBoss : kEnemies[(stage - 1) % kEnemies.length];
+///
+/// 周回内の位置で選ぶ。通し番号で選ぶとボスの分だけ並びがずれて、
+/// 2周目の1戦目が別の敵になってしまう。
+Enemy enemyForStage(int stage) {
+  if (stage % 10 == 0) return kBoss;
+  final inLoop = (stage - 1) % 10;
+  return kEnemies[inLoop % kEnemies.length];
+}
 
 /// 進むほど強くなる。10ステージで約2倍。
 double stageScale(int stage) => 1 + (stage - 1) * 0.1;
+
+/// 何周目の相手か。ボスを超えると同じ顔ぶれが戻ってくる。
+int loopOfStage(int stage) => (stage - 1) ~/ 10;
+
+// 周回が進むごとに、同じ敵でも呼び名が変わる。同じ名前が並ぶと
+// 進んでいる実感が薄れるため。
+const List<String> _loopSuffixes = [
+  '',
+  '・改',
+  '・覚醒',
+  '・真',
+  '・極',
+  '・災禍',
+];
+
+String enemyNameForStage(int stage) {
+  final enemy = enemyForStage(stage);
+  final loop = loopOfStage(stage);
+  if (loop <= 0) return enemy.name;
+  final suffix = loop < _loopSuffixes.length
+      ? _loopSuffixes[loop]
+      : '・災禍${loop - _loopSuffixes.length + 2}';
+  return '${enemy.name}$suffix';
+}

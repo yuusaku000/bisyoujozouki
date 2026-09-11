@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import '../data/organs.dart';
 import '../data/theme.dart';
 import '../models/daily_input.dart';
+import '../widgets/coin_text.dart';
+import '../widgets/ornate.dart';
 
 /// 今日の行動を記録する。歩数と階段はいずれ端末から自動で取る。
 class DailyInputSheet extends StatefulWidget {
@@ -41,8 +43,11 @@ class _DailyInputSheetState extends State<DailyInputSheet> {
           bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
         decoration: const BoxDecoration(
-          color: AppColors.panel,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          gradient: AppColors.panelGradient,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          border: Border(
+            top: BorderSide(color: AppColors.goldDim, width: 1.2),
+          ),
         ),
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
         child: SingleChildScrollView(
@@ -55,18 +60,19 @@ class _DailyInputSheetState extends State<DailyInputSheet> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.panelAlt,
+                    color: AppColors.hollow,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
-              const Text('今日の記録',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 4),
-              Text('目標 ${widget.stepGoal}歩',
-                  style: const TextStyle(
-                      fontSize: 13, color: AppColors.textMuted)),
+              const SizedBox(height: 18),
+              const Center(child: OrnateLabel('きょうの記録')),
+              const SizedBox(height: 10),
+              Center(
+                child: Text('目標 ${widget.stepGoal}歩',
+                    style: const TextStyle(
+                        fontSize: 13, color: AppColors.textMuted)),
+              ),
               const SizedBox(height: 20),
               _numberField(
                 controller: _stepsController,
@@ -115,8 +121,10 @@ class _DailyInputSheetState extends State<DailyInputSheet> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: AppColors.panelAlt,
-                  borderRadius: BorderRadius.circular(12),
+                  color: AppColors.hollow,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                      color: AppColors.goldDim.withValues(alpha: 0.6)),
                 ),
                 child: Row(
                   children: [
@@ -124,29 +132,18 @@ class _DailyInputSheetState extends State<DailyInputSheet> {
                         style: TextStyle(
                             fontSize: 13, color: AppColors.textMuted)),
                     const Spacer(),
-                    Text('${_input.coinsEarned}',
+                    Text(formatCoins(_input.coinsEarned),
                         style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.coin)),
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.gold)),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: FilledButton(
-                  onPressed: () => Navigator.pop(context, _input),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.accent,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                  ),
-                  child: const Text('1日を終える',
-                      style: TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w800)),
-                ),
+              JewelButton(
+                label: '1日を終える',
+                onPressed: () => Navigator.pop(context, _input),
               ),
             ],
           ),
@@ -178,7 +175,7 @@ class _DailyInputSheetState extends State<DailyInputSheet> {
           decoration: InputDecoration(
             suffixText: suffix,
             filled: true,
-            fillColor: AppColors.panelAlt,
+            fillColor: AppColors.hollow,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
@@ -222,7 +219,7 @@ class _DailyInputSheetState extends State<DailyInputSheet> {
               Switch(
                 value: value,
                 onChanged: onChanged,
-                activeThumbColor: AppColors.accent,
+                activeThumbColor: AppColors.rose,
               ),
             ],
           ),

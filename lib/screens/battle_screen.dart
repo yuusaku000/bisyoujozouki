@@ -8,6 +8,7 @@ import '../data/theme.dart';
 import '../models/battle.dart';
 import '../models/game_state.dart';
 import '../models/organ.dart';
+import '../widgets/ornate.dart';
 
 /// 自動戦闘を1行ずつ再生する。結果は開始時点で確定している。
 class BattleScreen extends StatefulWidget {
@@ -115,7 +116,7 @@ class _BattleScreenState extends State<BattleScreen> {
           SafeArea(
             child: Column(
               children: [
-                _header(enemy.name),
+                _header(enemyNameForStage(_stage)),
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -192,7 +193,7 @@ class _BattleScreenState extends State<BattleScreen> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: active ? organ.accent : AppColors.panelAlt,
+                    color: active ? organ.accent : AppColors.hollow,
                     width: active ? 3 : 2,
                   ),
                   boxShadow: active
@@ -227,17 +228,11 @@ class _BattleScreenState extends State<BattleScreen> {
                     const TextStyle(fontSize: 12, color: AppColors.textMuted)),
           ),
           Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: TweenAnimationBuilder<double>(
-                tween: Tween(end: maxValue == 0 ? 0 : value / maxValue),
-                duration: const Duration(milliseconds: 300),
-                builder: (context, v, _) => LinearProgressIndicator(
-                  value: v,
-                  minHeight: 10,
-                  backgroundColor: AppColors.panelAlt,
-                  valueColor: AlwaysStoppedAnimation(color),
-                ),
+            child: JewelBar(
+              value: maxValue == 0 ? 0 : value / maxValue,
+              height: 13,
+              gradient: LinearGradient(
+                colors: [Color.lerp(color, Colors.white, 0.35)!, color],
               ),
             ),
           ),
@@ -260,8 +255,9 @@ class _BattleScreenState extends State<BattleScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.panel.withValues(alpha: 0.9),
-        borderRadius: BorderRadius.circular(14),
+        gradient: AppColors.panelGradient,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.goldDim.withValues(alpha: 0.55)),
       ),
       child: ListView.builder(
         controller: _scroll,
@@ -294,21 +290,17 @@ class _BattleScreenState extends State<BattleScreen> {
       child: SizedBox(
         width: double.infinity,
         height: 52,
-        child: FilledButton(
+        child: JewelButton(
+          label: !_done
+              ? '戦闘中…'
+              : _result.won
+                  ? 'ステージ $_stage クリア！'
+                  : 'もっと歩いてから挑もう',
+          gradient: _result.won
+              ? AppColors.roseGradient
+              : const LinearGradient(
+                  colors: [Color(0xFF4A3556), Color(0xFF2E2038)]),
           onPressed: _done ? () => Navigator.pop(context, _result.won) : null,
-          style: FilledButton.styleFrom(
-            backgroundColor: _result.won ? AppColors.accent : AppColors.panelAlt,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          ),
-          child: Text(
-            !_done
-                ? '戦闘中…'
-                : _result.won
-                    ? 'ステージ $_stage クリア！'
-                    : 'もっと歩いてから挑もう',
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-          ),
         ),
       ),
     );

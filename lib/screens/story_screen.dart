@@ -4,6 +4,7 @@ import '../data/organs.dart';
 import '../data/story.dart';
 import '../data/theme.dart';
 import '../models/organ.dart';
+import '../widgets/ornate.dart';
 
 /// 1話を読む画面。タップで1行ずつ進む。
 class StoryScreen extends StatefulWidget {
@@ -40,8 +41,17 @@ class _StoryScreenState extends State<StoryScreen> {
           fit: StackFit.expand,
           children: [
             Image.asset('assets/bg/bg_home.png', fit: BoxFit.cover),
-            const DecoratedBox(
-              decoration: BoxDecoration(color: Color(0xDD16111A)),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  radius: 1.1,
+                  colors: [
+                    (speaker?.accent ?? AppColors.rose)
+                        .withValues(alpha: 0.22),
+                    const Color(0xF2120A16),
+                  ],
+                ),
+              ),
             ),
             if (speaker != null)
               Align(
@@ -97,23 +107,48 @@ class _StoryScreenState extends State<StoryScreen> {
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
       decoration: BoxDecoration(
-        color: AppColors.panel.withValues(alpha: 0.94),
-        borderRadius: BorderRadius.circular(18),
+        gradient: AppColors.panelGradient,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: (speaker?.accent ?? AppColors.goldDim).withValues(alpha: 0.7),
+          width: 1.3,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.5),
+            blurRadius: 22,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
           if (speaker != null) ...[
-            Text(
-              speaker.name,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
-                color: speaker.accent,
-              ),
+            Row(
+              children: [
+                ClipOval(
+                  child: Image.asset(
+                    speaker.facePath(Condition.genki),
+                    width: 30,
+                    height: 30,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                const SizedBox(width: 9),
+                Text(
+                  speaker.name,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.2,
+                    color: speaker.accent,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
           ],
           Text(
             line.text,
@@ -140,7 +175,7 @@ class _StoryScreenState extends State<StoryScreen> {
                 _isLast ? 'タップでとじる' : 'タップでつづき',
                 style: const TextStyle(
                   fontSize: 12,
-                  color: AppColors.accent,
+                  color: AppColors.rose,
                 ),
               ),
             ],
@@ -177,8 +212,8 @@ class StoryListScreen extends StatelessWidget {
           return Opacity(
             opacity: open ? 1 : 0.45,
             child: Material(
-              color: AppColors.panel,
-              borderRadius: BorderRadius.circular(14),
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(16),
               child: InkWell(
                 borderRadius: BorderRadius.circular(14),
                 onTap: open
@@ -189,14 +224,15 @@ class StoryListScreen extends StatelessWidget {
                           ),
                         )
                     : null,
-                child: Padding(
+                child: OrnatePanel(
                   padding: const EdgeInsets.all(16),
+                  borderColor: open ? AppColors.rose : AppColors.goldDim,
                   child: Row(
                     children: [
                       Icon(
-                        open ? Icons.menu_book : Icons.lock,
+                        open ? Icons.auto_stories : Icons.lock,
                         size: 18,
-                        color: open ? AppColors.accent : AppColors.textMuted,
+                        color: open ? AppColors.rose : AppColors.textMuted,
                       ),
                       const SizedBox(width: 12),
                       Expanded(

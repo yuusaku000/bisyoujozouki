@@ -61,6 +61,19 @@ void main() {
     test('進むほど敵が強くなる', () {
       expect(stageScale(11), greaterThan(stageScale(1)));
     });
+
+    test('2周目以降は同じ敵でも呼び名が変わる', () {
+      // 同じ顔ぶれが並ぶと進んでいる実感が薄れる
+      expect(enemyNameForStage(1), '深夜のラーメン');
+      expect(enemyNameForStage(11), '深夜のラーメン・改');
+      expect(enemyNameForStage(21), '深夜のラーメン・覚醒');
+    });
+
+    test('周回が用意した接尾辞を超えても名前が作られる', () {
+      final deep = enemyNameForStage(101);
+      expect(deep, startsWith('深夜のラーメン'));
+      expect(deep.length, greaterThan('深夜のラーメン'.length));
+    });
   });
 
   group('進行の記録', () {

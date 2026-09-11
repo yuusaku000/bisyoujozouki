@@ -66,6 +66,7 @@ class Battle {
 
   BattleResult run() {
     final enemy = enemyForStage(stage);
+    final enemyName = enemyNameForStage(stage);
     final scale = stageScale(stage);
     final enemyMaxHp = (enemy.baseHp * scale).round();
     final enemyAttack = (enemy.baseAttack * scale).round();
@@ -143,17 +144,17 @@ class Battle {
       }
 
       partyHp -= enemyAttack;
-      log.add(BattleEvent('${enemy.name}の攻撃  $enemyAttack', damage: enemyAttack));
+      log.add(BattleEvent('$enemyNameの攻撃  $enemyAttack', damage: enemyAttack));
 
       // 3ターンごとに不調を押しつけてくる
       if (enemy.applies != Debuff.none && turn % 3 == 0) {
         debuffs.add(enemy.applies);
-        log.add(BattleEvent('${enemy.name}に${enemy.applies.label}をもらった'));
+        log.add(BattleEvent('$enemyNameに${enemy.applies.label}をもらった'));
       }
     }
 
     final won = enemyHp <= 0 && partyHp > 0;
-    log.add(BattleEvent(won ? '${enemy.name}を倒した！' : '倒れてしまった…'));
+    log.add(BattleEvent(won ? '$enemyNameを倒した！' : '倒れてしまった…'));
 
     return BattleResult(
       won: won,
