@@ -5,14 +5,17 @@ import '../models/game_state.dart';
 class SaveStore {
   static const _key = 'zoukicchi_save_v1';
 
+  /// 読めなければ最初から始める。
+  ///
+  /// 保存値の取り出し自体が失敗することもあるので、全体を囲っている。
+  /// ここで例外が抜けると起動処理が完了せず、ローディング画面のまま固まる。
   Future<GameState> load() async {
-    final prefs = await SharedPreferences.getInstance();
-    final source = prefs.getString(_key);
-    if (source == null) return GameState.fresh();
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final source = prefs.getString(_key);
+      if (source == null) return GameState.fresh();
       return GameState.decode(source);
     } catch (_) {
-      // 壊れたセーブで起動不能になるくらいなら、最初から始めたほうがまし。
       return GameState.fresh();
     }
   }
