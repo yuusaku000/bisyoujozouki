@@ -66,6 +66,7 @@ class OrganStatus {
     this.health = initialHealth,
     this.level = 1,
     this.ascensions = 0,
+    this.affection = 0,
   });
 
   final int health;
@@ -83,6 +84,42 @@ class OrganStatus {
 
   /// 次の壁を越えるのに必要な鍵の数。先へ行くほど重くなる。
   int get keysToAscend => ascensions + 1;
+
+  /// プレゼントで貯まる。運動では上がらない。
+  final int affection;
+
+  static const int maxHearts = 5;
+
+  /// ハート1つぶんに必要な累計。先へ行くほど遠くなる。
+  static const List<int> heartThresholds = [0, 40, 110, 230, 420, 700];
+
+  int get hearts {
+    var count = 0;
+    for (var i = 1; i < heartThresholds.length; i++) {
+      if (affection >= heartThresholds[i]) count = i;
+    }
+    return count;
+  }
+
+  bool get heartsMaxed => hearts >= maxHearts;
+
+  /// いまのハートの中での進み具合。
+  double get heartProgress {
+    if (heartsMaxed) return 1;
+    final from = heartThresholds[hearts];
+    final to = heartThresholds[hearts + 1];
+    return ((affection - from) / (to - from)).clamp(0.0, 1.0);
+  }
+
+  int get affectionToNextHeart =>
+      heartsMaxed ? 0 : heartThresholds[hearts + 1] - affection;
+
+  OrganStatus gifted(int points) => OrganStatus(
+    health: health,
+    level: level,
+    ascensions: ascensions,
+    affection: affection + points,
+  );
 
   static const int initialHealth = 80;
   static const int minHealth = 20;
@@ -104,23 +141,34 @@ class OrganStatus {
     health: (health + delta).clamp(minHealth, maxHealth),
     level: level,
     ascensions: ascensions,
+    affection: affection,
   );
 
-  OrganStatus leveledUp() =>
-      OrganStatus(health: health, level: level + 1, ascensions: ascensions);
+  OrganStatus leveledUp() => OrganStatus(
+    health: health,
+    level: level + 1,
+    ascensions: ascensions,
+    affection: affection,
+  );
 
-  OrganStatus ascended() =>
-      OrganStatus(health: health, level: level, ascensions: ascensions + 1);
+  OrganStatus ascended() => OrganStatus(
+    health: health,
+    level: level,
+    ascensions: ascensions + 1,
+    affection: affection,
+  );
 
   Map<String, dynamic> toJson() => {
     'health': health,
     'level': level,
     'ascensions': ascensions,
+    'affection': affection,
   };
 
   factory OrganStatus.fromJson(Map<String, dynamic> json) => OrganStatus(
     health: json['health'] as int? ?? initialHealth,
     level: json['level'] as int? ?? 1,
     ascensions: json['ascensions'] as int? ?? 0,
+    affection: json['affection'] as int? ?? 0,
   );
 }

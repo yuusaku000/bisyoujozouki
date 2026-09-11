@@ -104,13 +104,13 @@ void main() {
       }
     });
 
-    test('レベルが足りないと読めない', () {
-      int lowLevel(String id) => 1;
-      expect(unlockedCharaEpisodes(lowLevel), isEmpty);
+    test('親密度が足りないと読めない', () {
+      int noHearts(String id) => 0;
+      expect(unlockedCharaEpisodes(noHearts), isEmpty);
     });
 
-    test('レベルを上げた子の話だけ読める', () {
-      int onlyHeart(String id) => id == 'heart' ? 5 : 1;
+    test('親密度を上げた子の話だけ読める', () {
+      int onlyHeart(String id) => id == 'heart' ? 2 : 0;
       final open = unlockedCharaEpisodes(onlyHeart);
 
       expect(open, isNotEmpty);

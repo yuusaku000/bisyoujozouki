@@ -7,11 +7,18 @@ import '../models/mission.dart';
 import '../widgets/ornate.dart';
 
 /// 今日の目標を自分で選ぶ。押しつけられた課題より、選んだ約束のほうが守れる。
-class MissionTab extends StatelessWidget {
-  const MissionTab({super.key, required this.state, required this.onChanged});
+class MissionSheet extends StatefulWidget {
+  const MissionSheet({super.key, required this.state, required this.onChanged});
 
   final GameState state;
   final VoidCallback onChanged;
+
+  @override
+  State<MissionSheet> createState() => _MissionSheetState();
+}
+
+class _MissionSheetState extends State<MissionSheet> {
+  GameState get state => widget.state;
 
   bool _isChosen(Mission m) => state.missionIds.contains(m.id);
 
@@ -21,7 +28,8 @@ class MissionTab extends StatelessWidget {
     } else if (state.missionIds.length < kMissionSlots) {
       state.missionIds.add(m.id);
     }
-    onChanged();
+    setState(() {});
+    widget.onChanged();
   }
 
   @override
@@ -29,10 +37,18 @@ class MissionTab extends StatelessWidget {
     final chosen = state.missionIds.length;
 
     return Container(
-      color: AppColors.background,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.82,
+      ),
+      decoration: const BoxDecoration(
+        gradient: AppColors.panelGradient,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        border: Border(top: BorderSide(color: AppColors.goldDim, width: 1.2)),
+      ),
       child: SafeArea(
-        bottom: false,
+        top: false,
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(18, 12, 18, 4),
@@ -71,8 +87,9 @@ class MissionTab extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            Expanded(
+            Flexible(
               child: ListView.separated(
+                shrinkWrap: true,
                 padding: const EdgeInsets.fromLTRB(14, 0, 14, 20),
                 itemCount: kMissions.length,
                 separatorBuilder: (_, _) => const SizedBox(height: 10),

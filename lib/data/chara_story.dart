@@ -7,17 +7,19 @@ import 'story.dart';
 class CharaEpisode {
   const CharaEpisode({
     required this.organId,
-    required this.requiredLevel,
+    required this.requiredHearts,
     required this.title,
     required this.lines,
   });
 
   final String organId;
-  final int requiredLevel;
+
+  /// このハート数に届くと読める。運動ではなく、渡したものの積み重ねで開く。
+  final int requiredHearts;
   final String title;
   final List<StoryLine> lines;
 
-  String get key => 'chara:$organId:$requiredLevel';
+  String get key => 'chara:$organId:$requiredHearts';
 }
 
 const _genki = StoryFace.genki;
@@ -28,7 +30,7 @@ const List<CharaEpisode> kCharaStory = [
   // ── 心臓 ──
   CharaEpisode(
     organId: 'heart',
-    requiredLevel: 5,
+    requiredHearts: 2,
     title: '手のひらの音',
     lines: [
       StoryLine('ねえ、ちょっとこっち来て。', speakerId: 'heart', face: _futsuu),
@@ -42,7 +44,7 @@ const List<CharaEpisode> kCharaStory = [
   ),
   CharaEpisode(
     organId: 'heart',
-    requiredLevel: 15,
+    requiredHearts: 4,
     title: 'ずっと、さきまで',
     lines: [
       StoryLine('……ひとつだけ、こわいことがあるの。', speakerId: 'heart', face: _fuchou),
@@ -58,7 +60,7 @@ const List<CharaEpisode> kCharaStory = [
   // ── 肺 ──
   CharaEpisode(
     organId: 'lung',
-    requiredLevel: 5,
+    requiredHearts: 2,
     title: '風の通る場所',
     lines: [
       StoryLine('窓、開けてもいいですか。', speakerId: 'lung', face: _futsuu),
@@ -72,7 +74,7 @@ const List<CharaEpisode> kCharaStory = [
   ),
   CharaEpisode(
     organId: 'lung',
-    requiredLevel: 15,
+    requiredHearts: 4,
     title: 'いっしょに、はいて',
     lines: [
       StoryLine('あの、ちょっと、いいですか。', speakerId: 'lung', face: _fuchou),
@@ -88,7 +90,7 @@ const List<CharaEpisode> kCharaStory = [
   // ── 胃 ──
   CharaEpisode(
     organId: 'stomach',
-    requiredLevel: 5,
+    requiredHearts: 2,
     title: 'ひとくち、ちょうだい',
     lines: [
       StoryLine('あー！　それ、なに食べてるの！', speakerId: 'stomach', face: _genki),
@@ -106,7 +108,7 @@ const List<CharaEpisode> kCharaStory = [
   ),
   CharaEpisode(
     organId: 'stomach',
-    requiredLevel: 15,
+    requiredHearts: 4,
     title: 'こわかったんだよ',
     lines: [
       StoryLine(
@@ -130,7 +132,7 @@ const List<CharaEpisode> kCharaStory = [
   // ── 肝臓 ──
   CharaEpisode(
     organId: 'liver',
-    requiredLevel: 5,
+    requiredHearts: 2,
     title: '報告書',
     lines: [
       StoryLine('彼女は分厚い紙束をめくっていた。'),
@@ -144,7 +146,7 @@ const List<CharaEpisode> kCharaStory = [
   ),
   CharaEpisode(
     organId: 'liver',
-    requiredLevel: 15,
+    requiredHearts: 4,
     title: 'やすみかた',
     lines: [
       StoryLine('休肝日、というものがあるそうですね。', speakerId: 'liver', face: _futsuu),
@@ -160,7 +162,7 @@ const List<CharaEpisode> kCharaStory = [
   // ── 脳 ──
   CharaEpisode(
     organId: 'brain',
-    requiredLevel: 5,
+    requiredHearts: 2,
     title: '棚の奥',
     lines: [
       StoryLine('本棚の前で、彼女は一冊を抜き出していた。'),
@@ -173,7 +175,7 @@ const List<CharaEpisode> kCharaStory = [
   ),
   CharaEpisode(
     organId: 'brain',
-    requiredLevel: 15,
+    requiredHearts: 4,
     title: 'わたしが眠る番',
     lines: [
       StoryLine('……ひとつ、白状していい？', speakerId: 'brain', face: _fuchou),
@@ -194,6 +196,6 @@ const List<CharaEpisode> kCharaStory = [
 List<CharaEpisode> episodesForOrgan(String organId) =>
     kCharaStory.where((e) => e.organId == organId).toList();
 
-/// levelOf は臓器ごとの現在レベルを返す関数。
-List<CharaEpisode> unlockedCharaEpisodes(int Function(String) levelOf) =>
-    kCharaStory.where((e) => levelOf(e.organId) >= e.requiredLevel).toList();
+/// heartsOf は臓器ごとの現在のハート数を返す関数。
+List<CharaEpisode> unlockedCharaEpisodes(int Function(String) heartsOf) =>
+    kCharaStory.where((e) => heartsOf(e.organId) >= e.requiredHearts).toList();

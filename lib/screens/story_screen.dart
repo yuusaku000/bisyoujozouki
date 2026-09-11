@@ -251,14 +251,14 @@ class StoryListScreen extends StatefulWidget {
     super.key,
     required this.clearedStage,
     required this.readEpisodes,
-    required this.levelOf,
+    required this.heartsOf,
     this.onRead,
   });
 
   final int clearedStage;
   final Set<String> readEpisodes;
   final void Function(String key)? onRead;
-  final int Function(String organId) levelOf;
+  final int Function(String organId) heartsOf;
 
   @override
   State<StoryListScreen> createState() => _StoryListScreenState();
@@ -314,7 +314,7 @@ class _StoryListScreenState extends State<StoryListScreen> {
           const SizedBox(height: 6),
           const Center(
             child: Text(
-              'レベルを上げると読めるようになります',
+              '親密度を上げると読めるようになります',
               style: TextStyle(fontSize: 11, color: AppColors.textMuted),
             ),
           ),
@@ -322,9 +322,9 @@ class _StoryListScreenState extends State<StoryListScreen> {
           for (final organ in kOrgans)
             for (final episode in episodesForOrgan(organ.id)) ...[
               _row(
-                open: widget.levelOf(organ.id) >= episode.requiredLevel,
+                open: widget.heartsOf(organ.id) >= episode.requiredHearts,
                 unread:
-                    widget.levelOf(organ.id) >= episode.requiredLevel &&
+                    widget.heartsOf(organ.id) >= episode.requiredHearts &&
                     !readEpisodes.contains(episode.key),
                 child: _charaCard(context, organ, episode),
               ),
@@ -367,7 +367,7 @@ class _StoryListScreenState extends State<StoryListScreen> {
   }
 
   Widget _charaCard(BuildContext context, Organ organ, CharaEpisode episode) {
-    final open = widget.levelOf(organ.id) >= episode.requiredLevel;
+    final open = widget.heartsOf(organ.id) >= episode.requiredHearts;
     return Material(
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(16),
@@ -403,7 +403,7 @@ class _StoryListScreenState extends State<StoryListScreen> {
                     Text(
                       open
                           ? organ.name
-                          : '${organ.name}　Lv.${episode.requiredLevel} で解放',
+                          : '${organ.name}　♡${episode.requiredHearts} で解放',
                       style: TextStyle(
                         fontSize: 11,
                         color: open ? organ.accent : AppColors.textMuted,

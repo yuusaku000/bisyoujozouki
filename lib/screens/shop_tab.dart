@@ -13,8 +13,17 @@ class ShopTab extends StatelessWidget {
   final GameState state;
   final VoidCallback onChanged;
 
-  static const int keyPrice = 30000;
-  static const int ticketPrice = 5000;
+  static const int keyPrice = 25000;
+  static const int ticketPrice = 2500;
+
+  void _buyBundle(BuildContext context) {
+    final price = ticketPrice * 9;
+    if (state.coins < price) return;
+    state.coins -= price;
+    state.tickets += 10;
+    onChanged();
+    showTopToast(context, 'ガチャチケット ×10 を買いました', icon: Icons.shopping_bag);
+  }
 
   void _buy(BuildContext context, {int keys = 0, int tickets = 0}) {
     final price = keys * keyPrice + tickets * ticketPrice;
@@ -79,10 +88,21 @@ class ShopTab extends StatelessWidget {
                     icon: Icons.confirmation_number,
                     color: AppColors.rose,
                     name: 'ガチャチケット',
-                    detail: '衣装を引くのに使う（準備中）',
+                    detail: 'おくりものを引く。渡すと親密度が上がる',
                     price: ticketPrice,
                     owned: state.tickets,
                     onBuy: () => _buy(context, tickets: 1),
+                  ),
+                  const SizedBox(height: 12),
+                  _item(
+                    context,
+                    icon: Icons.confirmation_number,
+                    color: AppColors.gold,
+                    name: 'ガチャチケット ×10',
+                    detail: 'まとめ買い。1枚ぶん安い',
+                    price: ticketPrice * 9,
+                    owned: state.tickets,
+                    onBuy: () => _buyBundle(context),
                   ),
                   const SizedBox(height: 22),
                   const Center(child: OrnateLabel('鍵の集めかた')),

@@ -64,3 +64,51 @@ String lineFor(String organId, Condition condition, int seed) {
   if (lines == null || lines.isEmpty) return '…';
   return lines[seed.abs() % lines.length];
 }
+
+/// レベルが上がったときの一言。数字が増えるだけだと手応えが薄い。
+const Map<String, List<String>> kLevelUpLines = {
+  'heart': ['もっと強く打てる気がする！', 'ありがと。力がわいてきた。', 'この調子なら、どこまでも走れそう。'],
+  'lung': ['息が、深くなった気がします。', 'ありがとうございます。もっと吸えます。', 'すこし、丈夫になれたかな。'],
+  'stomach': ['よーし、なんでも溶かせるぞ！', 'えへへ、強くなっちゃった。', 'もっと食べられる気がする！'],
+  'liver': ['助かります。処理が楽になりました。', '……ありがとうございます。', '仕事の効率が上がりました。'],
+  'brain': ['思考がクリアになった。', '棚がひとつ増えた感じ。', 'いい判断ができそう。'],
+};
+
+/// 限界を解いたときの一言。
+const Map<String, String> kAscendLines = {
+  'heart': 'まだ上に行けるの？　……あなたとなら、いいよ。',
+  'lung': 'まだ、深く吸えるんですね。知りませんでした。',
+  'stomach': 'えっ、まだ大きくなれるの！？　やったー！',
+  'liver': '限界だと思っていました。……思い込みでしたね。',
+  'brain': '天井があると思っていた。訂正する。',
+};
+
+/// プレゼントを渡したときの一言。好物かどうかで変わる。
+const Map<String, List<String>> kGiftLines = {
+  'heart': ['わたしに……？　ありがとう。', 'ふふ、うれしい。大事にする。'],
+  'lung': ['わあ……いいんですか？', 'だいじにします。ほんとうに。'],
+  'stomach': ['やったー！　ありがとう！', 'えへへ、うれしいなあ。'],
+  'liver': ['……もらっても、いいんですか。', 'ありがとうございます。意外と、うれしいです。'],
+  'brain': ['……ありがとう。意外と、こういうの弱い。', '大事な棚に、しまっておく。'],
+};
+
+const Map<String, String> kFavoriteGiftLines = {
+  'heart': 'えっ、これ……！　なんで好きだって分かったの？',
+  'lung': 'これ、ずっと欲しかったんです……！　どうして分かったんですか？',
+  'stomach': 'これこれこれ！　いちばん好きなやつ！',
+  'liver': '……よく知っていますね。うれしいです、正直に言うと。',
+  'brain': '……これを選ぶんだ。ちゃんと、見てくれてるんだね。',
+};
+
+String levelUpLine(String organId, int seed) {
+  final lines = kLevelUpLines[organId];
+  if (lines == null || lines.isEmpty) return 'ありがとう。';
+  return lines[seed.abs() % lines.length];
+}
+
+String giftLine(String organId, {required bool favorite, required int seed}) {
+  if (favorite) return kFavoriteGiftLines[organId] ?? 'ありがとう……！';
+  final lines = kGiftLines[organId];
+  if (lines == null || lines.isEmpty) return 'ありがとう。';
+  return lines[seed.abs() % lines.length];
+}

@@ -1,12 +1,15 @@
 import 'dart:convert';
+import 'dart:math';
 
 import '../data/organs.dart';
 import '../data/chara_story.dart';
 import '../data/enemies.dart';
 import '../data/missions.dart';
+import '../data/presents.dart';
 import '../data/story.dart';
 import 'daily_input.dart';
 import 'mission.dart';
+import 'present.dart';
 import 'organ.dart';
 
 /// 1日を締めたときに何が起きたか。画面で結果を見せるために返す。
@@ -54,6 +57,7 @@ class GameState {
     required this.keys,
     required this.tickets,
     required this.missionIds,
+    required this.inventory,
     this.battleSpeed = BattleSpeed.normal,
   });
 
@@ -70,6 +74,7 @@ class GameState {
     keys: 0,
     tickets: 0,
     missionIds: <String>[],
+    inventory: <String, int>{},
   );
 
   int coins;
@@ -96,6 +101,43 @@ class GameState {
 
   BattleSpeed battleSpeed;
 
+  /// 持っているプレゼント。id と個数。
+  Map<String, int> inventory;
+
+  final Random _random = Random();
+
+  int countOf(String presentId) => inventory[presentId] ?? 0;
+
+  List<Present> get ownedPresents =>
+      kPresents.where((p) => countOf(p.id) > 0).toList()
+        ..sort((a, b) => b.rarity.stars.compareTo(a.rarity.stars));
+
+  bool get canPull => tickets >= kGachaCost;
+  bool get canPullTen => tickets >= kGachaTenCost;
+
+  List<Present> pull({required bool ten}) {
+    final cost = ten ? kGachaTenCost : kGachaCost;
+    if (tickets < cost) return const [];
+    tickets -= cost;
+    final results = ten ? rollTen(_random) : [rollOne(_random)];
+    for (final p in results) {
+      inventory[p.id] = countOf(p.id) + 1;
+    }
+    return results;
+  }
+
+  /// 渡すと親密度が上がる。好物なら倍。
+  int givePresent(String organId, Present present) {
+    if (countOf(present.id) <= 0) return 0;
+    final gain = present.affectionFor(organId);
+    inventory[present.id] = countOf(present.id) - 1;
+    if (inventory[present.id] == 0) inventory.remove(present.id);
+    organs[organId] = statusOf(organId).gifted(gain);
+    return gain;
+  }
+
+  int heartsOf(String organId) => statusOf(organId).hearts;
+
   List<Mission> get missions =>
       missionIds.map(missionById).whereType<Mission>().toList();
 
@@ -115,7 +157,7 @@ class GameState {
       unlockedEpisodes(
         clearedStage,
       ).any((e) => !readEpisodes.contains(e.key)) ||
-      unlockedCharaEpisodes(levelOf).any((e) => !readEpisodes.contains(e.key));
+      unlockedCharaEpisodes(heartsOf).any((e) => !readEpisodes.contains(e.key));
 
   /// バトルに勝ってもコインは出さない。
   ///
@@ -245,6 +287,7 @@ class GameState {
     'tickets': tickets,
     'missionIds': missionIds,
     'battleSpeed': battleSpeed.name,
+    'inventory': inventory,
   });
 
   factory GameState.decode(String source) {
@@ -278,6 +321,9 @@ class GameState {
       battleSpeed: BattleSpeed.values.firstWhere(
         (s) => s.name == map['battleSpeed'],
         orElse: () => BattleSpeed.normal,
+      ),
+      inventory: ((map['inventory'] as Map<String, dynamic>?) ?? const {}).map(
+        (k, v) => MapEntry(k, v as int),
       ),
     );
   }

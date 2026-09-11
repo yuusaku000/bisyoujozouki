@@ -6,7 +6,7 @@ import '../services/save_store.dart';
 import '../services/step_source.dart';
 import 'grow_tab.dart';
 import 'home_tab.dart';
-import 'mission_tab.dart';
+import 'gacha_tab.dart';
 import 'shop_tab.dart';
 
 /// 画面が増えたので下のタブで分ける。ホームに全部載せると、
@@ -67,7 +67,7 @@ class _MainShellState extends State<MainShell> {
         children: [
           HomeTab(state: state, onChanged: _changed, onReset: _reset),
           GrowTab(state: state, onChanged: _changed),
-          MissionTab(state: state, onChanged: _changed),
+          GachaTab(state: state, onChanged: _changed),
           ShopTab(state: state, onChanged: _changed),
         ],
       ),
@@ -91,12 +91,7 @@ class _MainShellState extends State<MainShell> {
             children: [
               _item(0, Icons.home_rounded, 'ホーム'),
               _item(1, Icons.favorite_rounded, '育成'),
-              _item(
-                2,
-                Icons.checklist_rounded,
-                'ミッション',
-                dot: !state.hasMissions,
-              ),
+              _item(2, Icons.card_giftcard_rounded, 'ガチャ', dot: state.canPull),
               _item(3, Icons.storefront_rounded, 'ショップ'),
             ],
           ),

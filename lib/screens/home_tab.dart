@@ -13,6 +13,7 @@ import '../widgets/ornate.dart';
 import '../widgets/top_toast.dart';
 import 'battle_screen.dart';
 import 'daily_input_sheet.dart';
+import 'mission_sheet.dart';
 import 'settings_screen.dart';
 import 'story_screen.dart';
 
@@ -45,6 +46,16 @@ class _HomeTabState extends State<HomeTab> {
     final party = state.party;
     if (party.isEmpty) return kOrgans.first;
     return party[_selected.clamp(0, party.length - 1)];
+  }
+
+  Future<void> _openMissions() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => MissionSheet(state: state, onChanged: widget.onChanged),
+    );
+    if (mounted) setState(() {});
   }
 
   Future<void> _recordDay() async {
@@ -94,7 +105,7 @@ class _HomeTabState extends State<HomeTab> {
         builder: (_) => StoryListScreen(
           clearedStage: state.clearedStage,
           readEpisodes: state.readEpisodes,
-          levelOf: state.levelOf,
+          heartsOf: state.heartsOf,
           onRead: _onEpisodeRead,
         ),
       ),
@@ -541,7 +552,28 @@ class _HomeTabState extends State<HomeTab> {
       padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
       child: Column(
         children: [
-          JewelButton(label: '今日を記録する', height: 50, onPressed: _recordDay),
+          Row(
+            children: [
+              Expanded(
+                child: QuietButton(
+                  label: state.hasMissions
+                      ? '今日の目標 ${state.missionIds.length}'
+                      : '目標をえらぶ',
+                  icon: Icons.checklist,
+                  onPressed: _openMissions,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                flex: 2,
+                child: JewelButton(
+                  label: '今日を記録する',
+                  height: 48,
+                  onPressed: _recordDay,
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 10),
           JewelButton(
             label: 'ステージ ${state.currentStage} に挑む',

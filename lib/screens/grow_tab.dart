@@ -1,68 +1,167 @@
 import 'package:flutter/material.dart';
 
+import '../data/lines.dart';
 import '../data/theme.dart';
 import '../models/game_state.dart';
 import '../models/organ.dart';
 import '../widgets/coin_text.dart';
 import '../widgets/health_bar.dart';
 import '../widgets/ornate.dart';
-import '../widgets/top_toast.dart';
+import 'present_sheet.dart';
 
-/// 数字をいじる場所。ホームと分けたのは、会いに来る場所と
-/// 育てる場所で気分が違うため。
-class GrowTab extends StatelessWidget {
+/// 一人ずつ、全身で向き合う場所。一覧に詰め込むと誰の顔も見えない。
+class GrowTab extends StatefulWidget {
   const GrowTab({super.key, required this.state, required this.onChanged});
 
   final GameState state;
   final VoidCallback onChanged;
 
   @override
+  State<GrowTab> createState() => _GrowTabState();
+}
+
+class _GrowTabState extends State<GrowTab> {
+  final _pages = PageController();
+  int _index = 0;
+
+  /// 直近の反応。しばらくすると消える。
+  String? _reaction;
+
+  GameState get state => widget.state;
+
+  @override
+  void dispose() {
+    _pages.dispose();
+    super.dispose();
+  }
+
+  int _sayId = 0;
+
+  /// 反応はしばらく残す。すぐ消えると、何か言ったことにすら気づかない。
+  void _say(String text) {
+    final id = ++_sayId;
+    setState(() => _reaction = text);
+    Future.delayed(const Duration(seconds: 6), () {
+      if (mounted && _sayId == id) setState(() => _reaction = null);
+    });
+  }
+
+  void _levelUp(Organ organ) {
+    if (!state.canLevelUp(organ.id)) return;
+    state.levelUp(organ.id);
+    widget.onChanged();
+    _say(levelUpLine(organ.id, state.statusOf(organ.id).level));
+  }
+
+  void _ascend(Organ organ) {
+    if (!state.canAscend(organ.id)) return;
+    state.ascend(organ.id);
+    widget.onChanged();
+    _say(kAscendLines[organ.id] ?? '……ありがとう。');
+  }
+
+  Future<void> _openPresents(Organ organ) async {
+    final given = await showModalBottomSheet<GiftResult>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => PresentSheet(state: state, organ: organ),
+    );
+    if (given == null || !mounted) return;
+    widget.onChanged();
+    _say(
+      giftLine(
+        organ.id,
+        favorite: given.favorite,
+        seed: state.statusOf(organ.id).affection,
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      color: AppColors.background,
-      child: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            _header(),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(14, 4, 14, 20),
-                children: [
-                  for (final organ in state.party) ...[
-                    _card(context, organ),
-                    const SizedBox(height: 12),
-                  ],
-                  if (state.party.length < 5)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: Text(
-                        '物語を読み進めると、育てられる子が増えます',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textMuted,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
+    final party = state.party;
+    if (party.isEmpty) {
+      return const ColoredBox(color: AppColors.background);
+    }
+    final organ = party[_index.clamp(0, party.length - 1)];
+    final status = state.statusOf(organ.id);
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        const ColoredBox(color: AppColors.background),
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 420),
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              radius: 1.1,
+              center: const Alignment(0, -0.35),
+              colors: [
+                organ.accent.withValues(alpha: 0.36),
+                organ.accent.withValues(alpha: 0.08),
+                Colors.transparent,
+              ],
+              stops: const [0.0, 0.5, 1.0],
             ),
-          ],
+          ),
         ),
+        PageView.builder(
+          controller: _pages,
+          itemCount: party.length,
+          onPageChanged: (i) => setState(() {
+            _index = i;
+            _reaction = null;
+          }),
+          itemBuilder: (context, i) => _figure(party[i]),
+        ),
+        const DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xCC170E1A), Color(0x00170E1A), Color(0xF5120A16)],
+              stops: [0.0, 0.28, 0.62],
+            ),
+          ),
+        ),
+        SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              _header(),
+              const Spacer(),
+              if (_reaction != null) _reactionBubble(organ),
+              _dots(party.length),
+              const SizedBox(height: 8),
+              _panel(organ, status),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _figure(Organ organ) {
+    final condition = state.statusOf(organ.id).condition;
+    return Padding(
+      padding: const EdgeInsets.only(top: 40),
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: Image.asset(organ.imagePath(condition), fit: BoxFit.contain),
       ),
     );
   }
 
   Widget _header() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 12, 18, 10),
+      padding: const EdgeInsets.fromLTRB(18, 10, 18, 0),
       child: Row(
         children: [
           const Text(
             '育成',
             style: TextStyle(
-              fontSize: 20,
+              fontSize: 18,
               fontWeight: FontWeight.w900,
               letterSpacing: 2,
             ),
@@ -80,7 +179,7 @@ class GrowTab extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.hollow,
+        color: AppColors.hollow.withValues(alpha: 0.85),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.goldDim.withValues(alpha: 0.6)),
       ),
@@ -106,133 +205,199 @@ class GrowTab extends StatelessWidget {
     );
   }
 
-  Widget _card(BuildContext context, Organ organ) {
-    final status = state.statusOf(organ.id);
-    final atCap = status.atCap;
-
-    return OrnatePanel(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-      borderColor: organ.accent,
-      child: Column(
-        children: [
-          Row(
+  Widget _reactionBubble(Organ organ) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+      child: GestureDetector(
+        onTap: () => setState(() => _reaction = null),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+          decoration: BoxDecoration(
+            gradient: AppColors.panelGradient,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: organ.accent, width: 1.2),
+            boxShadow: [
+              BoxShadow(
+                color: organ.accent.withValues(alpha: 0.4),
+                blurRadius: 18,
+              ),
+            ],
+          ),
+          child: Row(
             children: [
               ClipOval(
                 child: Image.asset(
-                  organ.facePath(status.condition),
-                  width: 44,
-                  height: 44,
+                  organ.facePath(Condition.genki),
+                  width: 32,
+                  height: 32,
                   fit: BoxFit.cover,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          organ.name,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 1.2,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            gradient: AppColors.goldGradient,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            'Lv.${status.level} / ${status.levelCap}',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w900,
-                              color: Color(0xFF3A2A0E),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${organ.metric.label}で育つ・${organ.role}',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textMuted,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  _reaction!,
+                  style: const TextStyle(fontSize: 14, height: 1.5),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          HealthBar(status: status),
-          const SizedBox(height: 14),
-          if (atCap)
-            _ascendRow(context, organ, status)
-          else
-            QuietButton(
-              label: 'レベルup　${formatCoins(status.levelUpCost())}',
-              icon: Icons.arrow_upward,
-              onPressed: state.canLevelUp(organ.id)
-                  ? () {
-                      state.levelUp(organ.id);
-                      onChanged();
-                    }
-                  : null,
-            ),
-        ],
+        ),
       ),
     );
   }
 
-  /// 上限に当たったら、コインではなく鍵を求める。
-  /// 歩くだけでは越えられない壁があるほうが、区切りになる。
-  Widget _ascendRow(BuildContext context, Organ organ, OrganStatus status) {
-    final need = status.keysToAscend;
-    final enough = state.keys >= need;
-
-    return Column(
+  Widget _dots(int count) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: AppColors.hollow,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.gold.withValues(alpha: 0.5)),
+        for (var i = 0; i < count; i++)
+          Container(
+            width: i == _index ? 18 : 6,
+            height: 6,
+            margin: const EdgeInsets.symmetric(horizontal: 3),
+            decoration: BoxDecoration(
+              color: i == _index ? AppColors.rose : AppColors.hollow,
+              borderRadius: BorderRadius.circular(3),
+            ),
           ),
-          child: Text(
-            'Lv.${status.levelCap} が上限です。解放の鍵 ×$need で先へ進めます',
-            style: const TextStyle(fontSize: 11, color: AppColors.gold),
-          ),
+      ],
+    );
+  }
+
+  Widget _panel(Organ organ, OrganStatus status) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      child: OrnatePanel(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        borderColor: organ.accent,
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Text(
+                  organ.name,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: AppColors.goldGradient,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'Lv.${status.level} / ${status.levelCap}',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF3A2A0E),
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                _hearts(status),
+              ],
+            ),
+            const SizedBox(height: 10),
+            _affectionBar(status),
+            const SizedBox(height: 12),
+            HealthBar(status: status),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: QuietButton(
+                    label: 'プレゼント',
+                    icon: Icons.card_giftcard,
+                    onPressed: state.ownedPresents.isEmpty
+                        ? null
+                        : () => _openPresents(organ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: status.atCap
+                      ? QuietButton(
+                          label: '限界を解く ×${status.keysToAscend}',
+                          icon: Icons.vpn_key,
+                          onPressed: state.canAscend(organ.id)
+                              ? () => _ascend(organ)
+                              : null,
+                        )
+                      : QuietButton(
+                          label: formatCoins(status.levelUpCost()),
+                          icon: Icons.arrow_upward,
+                          onPressed: state.canLevelUp(organ.id)
+                              ? () => _levelUp(organ)
+                              : null,
+                        ),
+                ),
+              ],
+            ),
+          ],
         ),
-        const SizedBox(height: 10),
-        JewelButton(
-          label: enough ? '限界を解く（鍵 ×$need）' : '鍵が足りません（${state.keys} / $need）',
-          icon: Icons.vpn_key,
-          height: 48,
-          gradient: AppColors.goldGradient,
-          onPressed: enough
-              ? () {
-                  state.ascend(organ.id);
-                  onChanged();
-                  showTopToast(
-                    context,
-                    '${organ.name}の限界が解けました',
-                    icon: Icons.auto_awesome,
-                  );
-                }
-              : null,
+      ),
+    );
+  }
+
+  Widget _hearts(OrganStatus status) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var i = 0; i < OrganStatus.maxHearts; i++)
+          Padding(
+            padding: const EdgeInsets.only(left: 2),
+            child: Icon(
+              i < status.hearts ? Icons.favorite : Icons.favorite_border,
+              size: 16,
+              color: i < status.hearts
+                  ? AppColors.rose
+                  : AppColors.textMuted.withValues(alpha: 0.5),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _affectionBar(OrganStatus status) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Text(
+              '親密度',
+              style: TextStyle(
+                fontSize: 11,
+                color: AppColors.textMuted,
+                letterSpacing: 1.8,
+              ),
+            ),
+            const Spacer(),
+            Text(
+              status.heartsMaxed
+                  ? 'これ以上ないくらい'
+                  : 'つぎの♡まで ${status.affectionToNextHeart}',
+              style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        JewelBar(
+          value: status.heartProgress,
+          height: 9,
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFFB3C9), AppColors.roseDeep],
+          ),
         ),
       ],
     );
