@@ -258,6 +258,22 @@ class _HomeScreenState extends State<HomeScreen> {
         fit: StackFit.expand,
         children: [
           Image.asset('assets/bg/bg_home.png', fit: BoxFit.cover),
+          // 見ている子の色を部屋に落とす。誰といるのかが空気で分かる。
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 420),
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                radius: 1.15,
+                center: const Alignment(0, -0.25),
+                colors: [
+                  _organ.accent.withValues(alpha: 0.42),
+                  _organ.accent.withValues(alpha: 0.10),
+                  Colors.transparent,
+                ],
+                stops: const [0.0, 0.55, 1.0],
+              ),
+            ),
+          ),
           // 背景が明るいので、上に置く文字が読めるよう落とす
           const DecoratedBox(
             decoration: BoxDecoration(
@@ -370,6 +386,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// アイコンだけだと何のボタンか分からないので、文字を添える。
   Widget _storyButton(bool hasUnread) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        _storyButtonBody(),
+        if (hasUnread) const Positioned(top: -4, right: -4, child: UnreadDot()),
+      ],
+    );
+  }
+
+  Widget _storyButtonBody() {
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -395,23 +421,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: Colors.white,
                 ),
               ),
-              if (hasUnread) ...[
-                const SizedBox(width: 7),
-                Container(
-                  width: 9,
-                  height: 9,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFF3B4E),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFFFF3B4E).withValues(alpha: 0.8),
-                        blurRadius: 7,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
             ],
           ),
         ),

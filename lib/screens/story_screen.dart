@@ -235,69 +235,90 @@ class StoryListScreen extends StatelessWidget {
         itemBuilder: (context, i) {
           final episode = kStory[i];
           final open = unlocked.contains(episode);
-          return Opacity(
-            opacity: open ? 1 : 0.45,
-            child: Material(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(16),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(14),
-                onTap: open
-                    ? () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => StoryScreen(
-                            episode: episode,
-                            onRead: () => onRead?.call(episode.stage),
-                          ),
-                        ),
-                      )
-                    : null,
-                child: OrnatePanel(
-                  padding: const EdgeInsets.all(16),
-                  borderColor: open ? AppColors.rose : AppColors.goldDim,
-                  child: Row(
-                    children: [
-                      Icon(
-                        open ? Icons.auto_stories : Icons.lock,
-                        size: 18,
-                        color: open ? AppColors.rose : AppColors.textMuted,
-                      ),
-                      if (open && !readEpisodes.contains(episode.stage)) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          width: 9,
-                          height: 9,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFFF4D5E),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ],
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          open ? episode.title : '？？？',
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                      Text(
-                        'ステージ ${episode.stage}',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppColors.textMuted,
-                        ),
-                      ),
-                    ],
+          final unread = open && !readEpisodes.contains(episode.stage);
+          return Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Opacity(
+                opacity: open ? 1 : 0.45,
+                child: _card(context, episode, open),
+              ),
+              if (unread)
+                const Positioned(top: -4, right: -4, child: UnreadDot()),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _card(BuildContext context, StoryEpisode episode, bool open) {
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: open
+            ? () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => StoryScreen(
+                    episode: episode,
+                    onRead: () => onRead?.call(episode.stage),
+                  ),
+                ),
+              )
+            : null,
+        child: OrnatePanel(
+          padding: const EdgeInsets.all(16),
+          borderColor: open ? AppColors.rose : AppColors.goldDim,
+          child: Row(
+            children: [
+              Icon(
+                open ? Icons.auto_stories : Icons.lock,
+                size: 18,
+                color: open ? AppColors.rose : AppColors.textMuted,
+              ),
+
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  open ? episode.title : '？？？',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
-            ),
-          );
-        },
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 未読のしるし。数は要らない。新しいものがあるかどうかだけ分かればいい。
+class UnreadDot extends StatelessWidget {
+  const UnreadDot({super.key, this.size = 11});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: const Color(0xFFFF3B4E),
+        shape: BoxShape.circle,
+        border: Border.all(color: AppColors.background, width: 1.6),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFF3B4E).withValues(alpha: 0.85),
+            blurRadius: 8,
+          ),
+        ],
       ),
     );
   }

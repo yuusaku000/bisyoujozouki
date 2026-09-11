@@ -142,6 +142,51 @@ class _BattleScreenState extends State<BattleScreen> {
     );
   }
 
+  /// 敵名は「・覚醒」などが付いて伸びるので、段名と同じ行に並べない。
+  /// 横に押し込むと、名前のほうが削られて読めなくなる。
+  Widget _header(String enemyName) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 10, 12, 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'ステージ $_stage',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textMuted,
+                    letterSpacing: 2,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  enemyName,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w900,
+                    height: 1.25,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (!_done)
+            TextButton(
+              onPressed: _skip,
+              style: TextButton.styleFrom(foregroundColor: AppColors.textMuted),
+              child: const Text('スキップ'),
+            ),
+        ],
+      ),
+    );
+  }
+
   bool get _defeated => _enemyHp <= 0;
 
   /// 倒れたら傾いて沈み、色が抜ける。ゲージが0になるだけだと素っ気ない。
@@ -169,39 +214,6 @@ class _BattleScreenState extends State<BattleScreen> {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _header(String enemyName) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-      child: Row(
-        children: [
-          Text(
-            'ステージ $_stage',
-            style: const TextStyle(
-              fontSize: 13,
-              color: AppColors.textMuted,
-              letterSpacing: 1.2,
-            ),
-          ),
-          const SizedBox(width: 10),
-          Flexible(
-            child: Text(
-              enemyName,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
-            ),
-          ),
-          const Spacer(),
-          if (!_done)
-            TextButton(
-              onPressed: _skip,
-              style: TextButton.styleFrom(foregroundColor: AppColors.textMuted),
-              child: const Text('スキップ'),
-            ),
-        ],
       ),
     );
   }
