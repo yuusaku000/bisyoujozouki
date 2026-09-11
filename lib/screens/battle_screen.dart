@@ -194,22 +194,27 @@ class _BattleScreenState extends State<BattleScreen> {
 
   bool get _defeated => _enemyHp <= 0;
 
-  /// 倒れたら傾いて沈み、色が抜ける。ゲージが0になるだけだと素っ気ない。
+  /// 倒れたら傾いて沈み、そのまま消えていく。
+  ///
+  /// 薄く残していたが、倒したのに居座っているように見える。
+  /// 消えきるまで見せたほうが、片がついた感じが出る。
   Widget _enemyFigure(String path) {
     return AnimatedSlide(
-      offset: _defeated ? const Offset(0, 0.18) : Offset.zero,
-      duration: const Duration(milliseconds: 700),
+      offset: _defeated ? const Offset(0, 0.26) : Offset.zero,
+      duration: const Duration(milliseconds: 900),
       curve: Curves.easeIn,
       child: AnimatedRotation(
         turns: _defeated ? 0.055 : 0,
         duration: const Duration(milliseconds: 700),
         curve: Curves.easeOutBack,
         child: AnimatedOpacity(
-          opacity: _defeated ? 0.35 : 1,
-          duration: const Duration(milliseconds: 700),
+          opacity: _defeated ? 0 : 1,
+          // 沈みきる少し前に消える。消えた場所に絵が残らない。
+          duration: const Duration(milliseconds: 850),
+          curve: Curves.easeInCubic,
           child: AnimatedScale(
-            scale: _defeated ? 0.92 : 1,
-            duration: const Duration(milliseconds: 700),
+            scale: _defeated ? 0.88 : 1,
+            duration: const Duration(milliseconds: 900),
             child: ColorFiltered(
               colorFilter: ColorFilter.mode(
                 _defeated ? Colors.black54 : Colors.transparent,
