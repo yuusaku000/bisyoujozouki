@@ -2,8 +2,11 @@ import 'dart:convert';
 
 import '../data/organs.dart';
 import '../data/chara_story.dart';
+import '../data/enemies.dart';
+import '../data/missions.dart';
 import '../data/story.dart';
 import 'daily_input.dart';
+import 'mission.dart';
 import 'organ.dart';
 
 /// 1日を締めたときに何が起きたか。画面で結果を見せるために返す。
@@ -13,6 +16,7 @@ class DayResult {
     required this.healthDeltas,
     required this.goalAchieved,
     required this.newStepGoal,
+    required this.clearedMissions,
   });
 
   final int coinsEarned;
@@ -21,6 +25,19 @@ class DayResult {
 
   /// 目標が変わった場合のみ値が入る。
   final int? newStepGoal;
+
+  final List<Mission> clearedMissions;
+}
+
+/// 戦闘ログの送り速度。
+enum BattleSpeed {
+  slow('ゆっくり', 620),
+  normal('ふつう', 420),
+  fast('はやい', 200);
+
+  const BattleSpeed(this.label, this.millis);
+  final String label;
+  final int millis;
 }
 
 class GameState {
@@ -34,6 +51,10 @@ class GameState {
     required this.today,
     required this.clearedStage,
     required this.readEpisodes,
+    required this.keys,
+    required this.tickets,
+    required this.missionIds,
+    this.battleSpeed = BattleSpeed.normal,
   });
 
   factory GameState.fresh() => GameState(
@@ -46,6 +67,9 @@ class GameState {
     today: const DailyInput(),
     clearedStage: 0,
     readEpisodes: <String>{},
+    keys: 0,
+    tickets: 0,
+    missionIds: <String>[],
   );
 
   int coins;
@@ -60,6 +84,22 @@ class GameState {
   /// 読み終えた話の鍵。'main:3' や 'chara:heart:5' の形で持つ。
   /// 仲間が増えるのはクリアではなく、これを満たしたとき。
   Set<String> readEpisodes;
+
+  /// レベルの壁を越えるための鍵。
+  int keys;
+
+  /// ガチャ用のチケット。使い道は後で作る。
+  int tickets;
+
+  /// 今日ぶんの目標。自分で選ぶ。1日を終えると空になる。
+  List<String> missionIds;
+
+  BattleSpeed battleSpeed;
+
+  List<Mission> get missions =>
+      missionIds.map(missionById).whereType<Mission>().toList();
+
+  bool get hasMissions => missionIds.isNotEmpty;
 
   int get currentStage => clearedStage + 1;
 
@@ -81,9 +121,16 @@ class GameState {
   ///
   /// 報酬でコインを配ると「バトル→コイン→レベル→強くなる」の輪が閉じ、
   /// 歩かなくても強くなれてしまう。強さの源は運動だけに保つ。
-  void clearStage(int stage) {
-    if (stage == currentStage) clearedStage = stage;
+  /// 戻り値は手に入れた鍵の数。ボスだけが落とす。
+  int clearStage(int stage) {
+    if (stage != currentStage) return 0;
+    clearedStage = stage;
+    if (!enemyForStage(stage).isBoss) return 0;
+    keys += bossKeyDrop;
+    return bossKeyDrop;
   }
+
+  static const int bossKeyDrop = 1;
 
   // 運動習慣のない人が対象なので、最初の目標は達成できる高さから始める。
   static const int initialStepGoal = 3000;
@@ -94,13 +141,30 @@ class GameState {
 
   OrganStatus statusOf(String id) => organs[id] ?? const OrganStatus();
 
-  bool canLevelUp(String id) => coins >= statusOf(id).levelUpCost();
+  /// 上限に達していると、コインがあっても上げられない。
+  bool canLevelUp(String id) {
+    final status = statusOf(id);
+    return !status.atCap && coins >= status.levelUpCost();
+  }
 
   void levelUp(String id) {
+    if (!canLevelUp(id)) return;
     final status = statusOf(id);
-    if (coins < status.levelUpCost()) return;
     coins -= status.levelUpCost();
     organs[id] = status.leveledUp();
+  }
+
+  bool canAscend(String id) {
+    final status = statusOf(id);
+    return status.atCap && keys >= status.keysToAscend;
+  }
+
+  /// 壁を越える。鍵を払って上限だけを引き上げる。
+  void ascend(String id) {
+    if (!canAscend(id)) return;
+    final status = statusOf(id);
+    keys -= status.keysToAscend;
+    organs[id] = status.ascended();
   }
 
   /// 1日を締める。入力からコインと健康度を確定し、翌日に進む。
@@ -118,6 +182,12 @@ class GameState {
       organs[organ.id] = statusOf(organ.id).applyHealthDelta(delta);
     }
 
+    final cleared = missions.where((m) => m.isDone(today, stepGoal)).toList();
+    for (final m in cleared) {
+      keys += m.reward.keys;
+      tickets += m.reward.tickets;
+    }
+
     final earned = today.coinsEarned;
     final achieved = today.steps >= stepGoal;
 
@@ -126,12 +196,15 @@ class GameState {
 
     dayCount++;
     today = const DailyInput();
+    // 翌日はまた選び直す
+    missionIds = <String>[];
 
     return DayResult(
       coinsEarned: earned,
       healthDeltas: deltas,
       goalAchieved: achieved,
       newStepGoal: newGoal,
+      clearedMissions: cleared,
     );
   }
 
@@ -168,6 +241,10 @@ class GameState {
     'today': today.toJson(),
     'clearedStage': clearedStage,
     'readEpisodes': readEpisodes.toList(),
+    'keys': keys,
+    'tickets': tickets,
+    'missionIds': missionIds,
+    'battleSpeed': battleSpeed.name,
   });
 
   factory GameState.decode(String source) {
@@ -193,6 +270,15 @@ class GameState {
       readEpisodes: ((map['readEpisodes'] as List<dynamic>?) ?? const [])
           .map((e) => e is int ? 'main:$e' : e as String)
           .toSet(),
+      keys: map['keys'] as int? ?? 0,
+      tickets: map['tickets'] as int? ?? 0,
+      missionIds: ((map['missionIds'] as List<dynamic>?) ?? const [])
+          .map((e) => e as String)
+          .toList(),
+      battleSpeed: BattleSpeed.values.firstWhere(
+        (s) => s.name == map['battleSpeed'],
+        orElse: () => BattleSpeed.normal,
+      ),
     );
   }
 }

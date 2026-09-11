@@ -39,19 +39,22 @@ class _BattleScreenState extends State<BattleScreen> {
     super.initState();
     _partyHp = _result.partyMaxHp;
     _enemyHp = _result.enemyMaxHp;
-    _timer = Timer.periodic(const Duration(milliseconds: 420), (t) {
-      if (_shown >= _result.log.length) {
-        t.cancel();
-        _finish();
-        return;
-      }
-      setState(() {
-        final event = _result.log[_shown];
-        _applyToBars(event);
-        _shown++;
-      });
-      _scrollToEnd();
-    });
+    _timer = Timer.periodic(
+      Duration(milliseconds: widget.state.battleSpeed.millis),
+      (t) {
+        if (_shown >= _result.log.length) {
+          t.cancel();
+          _finish();
+          return;
+        }
+        setState(() {
+          final event = _result.log[_shown];
+          _applyToBars(event);
+          _shown++;
+        });
+        _scrollToEnd();
+      },
+    );
   }
 
   /// バーの動きはログの再生に合わせる。どの一撃で削れたのかが見えるように。
@@ -77,8 +80,10 @@ class _BattleScreenState extends State<BattleScreen> {
     });
   }
 
+  int _keysGained = 0;
+
   void _finish() {
-    if (_result.won) widget.state.clearStage(_stage);
+    if (_result.won) _keysGained = widget.state.clearStage(_stage);
     setState(() {});
   }
 
@@ -349,22 +354,57 @@ class _BattleScreenState extends State<BattleScreen> {
   Widget _footer() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-      child: SizedBox(
-        width: double.infinity,
-        height: 52,
-        child: JewelButton(
-          label: !_done
-              ? '戦闘中…'
-              : _result.won
-              ? 'ステージ $_stage クリア！'
-              : 'もっと歩いてから挑もう',
-          gradient: _result.won
-              ? AppColors.roseGradient
-              : const LinearGradient(
-                  colors: [Color(0xFF4A3556), Color(0xFF2E2038)],
-                ),
-          onPressed: _done ? () => Navigator.pop(context, _result.won) : null,
-        ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_keysGained > 0) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.hollow.withValues(alpha: 0.85),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.gold),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.vpn_key, size: 16, color: AppColors.gold),
+                  const SizedBox(width: 8),
+                  Text(
+                    '解放の鍵 ×$_keysGained を手に入れた',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.gold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+          _finishButton(),
+        ],
+      ),
+    );
+  }
+
+  Widget _finishButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 52,
+      child: JewelButton(
+        label: !_done
+            ? '戦闘中…'
+            : _result.won
+            ? 'ステージ $_stage クリア！'
+            : 'もっと歩いてから挑もう',
+        gradient: _result.won
+            ? AppColors.roseGradient
+            : const LinearGradient(
+                colors: [Color(0xFF4A3556), Color(0xFF2E2038)],
+              ),
+        onPressed: _done ? () => Navigator.pop(context, _result.won) : null,
       ),
     );
   }

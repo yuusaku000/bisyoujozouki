@@ -62,10 +62,27 @@ class Organ {
 
 /// 臓器の現在の状態。健康度は日々動き、レベルは上げたら下がらない。
 class OrganStatus {
-  const OrganStatus({this.health = initialHealth, this.level = 1});
+  const OrganStatus({
+    this.health = initialHealth,
+    this.level = 1,
+    this.ascensions = 0,
+  });
 
   final int health;
   final int level;
+
+  /// 限界を解いた回数。上限は10ごとに壁がある。
+  final int ascensions;
+
+  static const int capStep = 10;
+
+  /// いまのレベル上限。壁を越えるには鍵がいる。
+  int get levelCap => capStep * (ascensions + 1);
+
+  bool get atCap => level >= levelCap;
+
+  /// 次の壁を越えるのに必要な鍵の数。先へ行くほど重くなる。
+  int get keysToAscend => ascensions + 1;
 
   static const int initialHealth = 80;
   static const int minHealth = 20;
@@ -86,14 +103,24 @@ class OrganStatus {
   OrganStatus applyHealthDelta(int delta) => OrganStatus(
     health: (health + delta).clamp(minHealth, maxHealth),
     level: level,
+    ascensions: ascensions,
   );
 
-  OrganStatus leveledUp() => OrganStatus(health: health, level: level + 1);
+  OrganStatus leveledUp() =>
+      OrganStatus(health: health, level: level + 1, ascensions: ascensions);
 
-  Map<String, dynamic> toJson() => {'health': health, 'level': level};
+  OrganStatus ascended() =>
+      OrganStatus(health: health, level: level, ascensions: ascensions + 1);
+
+  Map<String, dynamic> toJson() => {
+    'health': health,
+    'level': level,
+    'ascensions': ascensions,
+  };
 
   factory OrganStatus.fromJson(Map<String, dynamic> json) => OrganStatus(
     health: json['health'] as int? ?? initialHealth,
     level: json['level'] as int? ?? 1,
+    ascensions: json['ascensions'] as int? ?? 0,
   );
 }

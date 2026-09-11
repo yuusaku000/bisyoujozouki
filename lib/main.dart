@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'data/theme.dart';
-import 'screens/home_screen.dart';
+import 'screens/main_shell.dart';
 
 void main() => runApp(const ZoukicchiApp());
 
@@ -14,7 +14,7 @@ class ZoukicchiApp extends StatelessWidget {
       title: '臓器っち',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
-      home: const HomeScreen(),
+      home: const MainShell(),
     );
   }
 }
