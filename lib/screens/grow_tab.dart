@@ -7,6 +7,7 @@ import '../models/organ.dart';
 import '../widgets/coin_text.dart';
 import '../widgets/health_bar.dart';
 import '../widgets/ornate.dart';
+import 'ascend_up.dart';
 import 'heart_up.dart';
 import 'present_sheet.dart';
 
@@ -54,11 +55,26 @@ class _GrowTabState extends State<GrowTab> {
     _say(levelUpLine(organ.id, state.statusOf(organ.id).level));
   }
 
-  void _ascend(Organ organ) {
+  Future<void> _ascend(Organ organ) async {
     if (!state.canAscend(organ.id)) return;
     state.ascend(organ.id);
     widget.onChanged();
-    _say(kAscendLines[organ.id] ?? '……ありがとう。');
+
+    // 鍵を使い切る一度きりの節目。一言で流さず、画面ごと止めて見せる。
+    await Navigator.push(
+      context,
+      PageRouteBuilder<void>(
+        opaque: false,
+        barrierColor: Colors.black54,
+        transitionDuration: const Duration(milliseconds: 260),
+        pageBuilder: (_, _, _) => AscendOverlay(
+          organ: organ,
+          levelCap: state.statusOf(organ.id).levelCap,
+          line: kAscendLines[organ.id] ?? '……ありがとう。',
+        ),
+      ),
+    );
+    if (mounted) setState(() {});
   }
 
   Future<void> _openPresents(Organ organ) async {
