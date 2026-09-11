@@ -18,6 +18,10 @@ class DailyInput {
 
   static const int stairsGoal = 5;
 
+  // 手入力なので、人間にありえない値が入る。青天井だと経済が壊れる。
+  static const int maxSteps = 100000;
+  static const int maxStairs = 500;
+
   bool selfReportFor(HealthMetric metric) => switch (metric) {
         HealthMetric.meal => ateWell,
         HealthMetric.rest => rested,
@@ -33,8 +37,8 @@ class DailyInput {
     bool? sleptWell,
   }) =>
       DailyInput(
-        steps: steps ?? this.steps,
-        stairs: stairs ?? this.stairs,
+        steps: (steps ?? this.steps).clamp(0, maxSteps),
+        stairs: (stairs ?? this.stairs).clamp(0, maxStairs),
         ateWell: ateWell ?? this.ateWell,
         rested: rested ?? this.rested,
         sleptWell: sleptWell ?? this.sleptWell,
@@ -52,8 +56,8 @@ class DailyInput {
       };
 
   factory DailyInput.fromJson(Map<String, dynamic> json) => DailyInput(
-        steps: json['steps'] as int? ?? 0,
-        stairs: json['stairs'] as int? ?? 0,
+        steps: (json['steps'] as int? ?? 0).clamp(0, maxSteps),
+        stairs: (json['stairs'] as int? ?? 0).clamp(0, maxStairs),
         ateWell: json['ateWell'] as bool? ?? false,
         rested: json['rested'] as bool? ?? false,
         sleptWell: json['sleptWell'] as bool? ?? false,

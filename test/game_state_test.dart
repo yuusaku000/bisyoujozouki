@@ -74,6 +74,22 @@ void main() {
       expect(input.coinsEarned, 3000 + 4 * 50);
     });
 
+    test('人間にありえない歩数は上限で止める', () {
+      // 手入力なので青天井にすると経済が壊れる
+      final absurd =
+          const DailyInput().copyWith(steps: 999999999, stairs: 99999);
+
+      expect(absurd.steps, DailyInput.maxSteps);
+      expect(absurd.stairs, DailyInput.maxStairs);
+    });
+
+    test('保存データが改竄されていても上限で止める', () {
+      final loaded = DailyInput.fromJson({'steps': 1 << 40, 'stairs': 1 << 20});
+
+      expect(loaded.steps, DailyInput.maxSteps);
+      expect(loaded.stairs, DailyInput.maxStairs);
+    });
+
     test('1日を終えると所持コインに加算される', () {
       final state = GameState.fresh();
       state.today = const DailyInput(steps: 1200);

@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../data/enemies.dart';
+import '../data/organs.dart';
 import '../data/theme.dart';
 import '../models/battle.dart';
 import '../models/game_state.dart';
+import '../models/organ.dart';
 
 /// 自動戦闘を1行ずつ再生する。結果は開始時点で確定している。
 class BattleScreen extends StatefulWidget {
@@ -121,6 +123,8 @@ class _BattleScreenState extends State<BattleScreen> {
                   ),
                 ),
                 _bar('敵', _enemyHp, _result.enemyMaxHp, AppColors.fuchou),
+                const SizedBox(height: 10),
+                _party(),
                 const SizedBox(height: 8),
                 _bar('みんな', _partyHp, _result.partyMaxHp, AppColors.genki),
                 const SizedBox(height: 12),
@@ -156,6 +160,56 @@ class _BattleScreenState extends State<BattleScreen> {
               style: TextButton.styleFrom(foregroundColor: AppColors.textMuted),
               child: const Text('スキップ'),
             ),
+        ],
+      ),
+    );
+  }
+
+  /// いま行動している臓器を光らせる。誰が何をしたかを絵で分かるように。
+  String? get _actingId {
+    if (_shown == 0 || _done) return null;
+    return _result.log[_shown - 1].actorId;
+  }
+
+  Widget _party() {
+    final acting = _actingId;
+    return SizedBox(
+      height: 62,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          for (final organ in kOrgans)
+            Builder(builder: (context) {
+              final condition =
+                  (widget.state.organs[organ.id] ?? const OrganStatus())
+                      .condition;
+              final active = organ.id == acting;
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                width: active ? 58 : 48,
+                height: active ? 58 : 48,
+                margin: const EdgeInsets.symmetric(horizontal: 5),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: active ? organ.accent : AppColors.panelAlt,
+                    width: active ? 3 : 2,
+                  ),
+                  boxShadow: active
+                      ? [
+                          BoxShadow(
+                            color: organ.accent.withValues(alpha: 0.6),
+                            blurRadius: 12,
+                          ),
+                        ]
+                      : null,
+                ),
+                child: ClipOval(
+                  child: Image.asset(organ.facePath(condition),
+                      fit: BoxFit.cover),
+                ),
+              );
+            }),
         ],
       ),
     );

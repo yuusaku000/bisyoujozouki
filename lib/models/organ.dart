@@ -43,6 +43,10 @@ class Organ {
 
   String imagePath(Condition condition) =>
       'assets/organs/$id/${id}_${condition.name}.png';
+
+  /// 立ち絵から顔だけを切り出したもの。バトルなど狭い場所で使う。
+  String facePath(Condition condition) =>
+      'assets/organs/$id/${id}_${condition.name}_face.png';
 }
 
 /// 臓器の現在の状態。健康度は日々動き、レベルは上げたら下がらない。

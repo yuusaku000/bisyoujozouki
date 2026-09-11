@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 
+import '../data/lines.dart';
 import '../data/organs.dart';
+import '../data/story.dart';
 import '../data/theme.dart';
 import '../models/daily_input.dart';
 import '../models/game_state.dart';
 import '../models/organ.dart';
 import '../services/save_store.dart';
 import '../services/step_source.dart';
+import '../widgets/coin_text.dart';
 import '../widgets/health_bar.dart';
 import 'battle_screen.dart';
 import 'daily_input_sheet.dart';
+import 'story_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -24,6 +28,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   GameState? _state;
   int _selected = 0;
+
+  /// タップするたびに別のことを言わせるための数。
+  int _talkCount = 0;
 
   @override
   void initState() {
@@ -153,6 +160,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _goToBattle() async {
     final state = _state!;
+    final stage = state.currentStage;
     await Navigator.push<bool>(
       context,
       MaterialPageRoute(builder: (_) => BattleScreen(state: state)),
@@ -160,6 +168,24 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!mounted) return;
     setState(() {});
     await _persist();
+
+    // 勝った分だけ話が進む。コインを配らない代わりの報酬。
+    final episode = episodeForStage(stage);
+    if (episode != null && state.clearedStage >= stage && mounted) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => StoryScreen(episode: episode)),
+      );
+    }
+  }
+
+  void _openStoryList() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => StoryListScreen(clearedStage: _state!.clearedStage),
+      ),
+    );
   }
 
   void _levelUp() {
@@ -205,10 +231,20 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 _topBar(state),
                 Expanded(
-                  child: Center(
-                    child: Image.asset(
-                      _organ.imagePath(status.condition),
-                      fit: BoxFit.contain,
+                  child: GestureDetector(
+                    onTap: () => setState(() => _talkCount++),
+                    behavior: HitTestBehavior.opaque,
+                    child: Stack(
+                      alignment: Alignment.bottomCenter,
+                      children: [
+                        Center(
+                          child: Image.asset(
+                            _organ.imagePath(status.condition),
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                        _speechBubble(state, status),
+                      ],
                     ),
                   ),
                 ),
@@ -218,6 +254,37 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// その日の調子として受け取れるよう、日付で言うことを決める。
+  /// タップすれば別のことを言う。
+  Widget _speechBubble(GameState state, OrganStatus status) {
+    final text = lineFor(
+      _organ.id,
+      status.condition,
+      state.dayCount + _talkCount,
+    );
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 220),
+        child: Container(
+          key: ValueKey(text),
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: AppColors.panel.withValues(alpha: 0.88),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: _organ.accent.withValues(alpha: 0.5)),
+          ),
+          child: Text(
+            text,
+            style: const TextStyle(fontSize: 14, height: 1.6),
+          ),
+        ),
       ),
     );
   }
@@ -232,14 +299,24 @@ class _HomeScreenState extends State<HomeScreen> {
             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
           ),
           const Spacer(),
+          IconButton(
+            onPressed: _openStoryList,
+            visualDensity: VisualDensity.compact,
+            icon: const Icon(Icons.menu_book,
+                color: AppColors.textMuted, size: 20),
+          ),
+          const SizedBox(width: 4),
           const Icon(Icons.monetization_on, color: AppColors.coin, size: 20),
           const SizedBox(width: 6),
-          Text(
-            '${state.coins}',
-            style: const TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w800,
-              color: AppColors.coin,
+          Flexible(
+            child: Text(
+              formatCoins(state.coins),
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+                color: AppColors.coin,
+              ),
             ),
           ),
         ],
@@ -364,7 +441,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: Text('レベルup  $cost'),
+                  child: Text('レベルup  ${formatCoins(cost)}',
+                      maxLines: 1, overflow: TextOverflow.ellipsis),
                 ),
               ),
               const SizedBox(width: 10),

@@ -170,7 +170,10 @@ class _DailyInputSheetState extends State<DailyInputSheet> {
         TextField(
           controller: controller,
           keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(6),
+          ],
           onChanged: (text) => onChanged(int.tryParse(text) ?? 0),
           decoration: InputDecoration(
             suffixText: suffix,
