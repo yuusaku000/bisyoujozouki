@@ -34,15 +34,15 @@ class GameState {
   });
 
   factory GameState.fresh() => GameState(
-        coins: 0,
-        organs: {for (final o in kOrgans) o.id: const OrganStatus()},
-        stepGoal: initialStepGoal,
-        goalStreak: 0,
-        missStreak: 0,
-        dayCount: 1,
-        today: const DailyInput(),
-        clearedStage: 0,
-      );
+    coins: 0,
+    organs: {for (final o in kOrgans) o.id: const OrganStatus()},
+    stepGoal: initialStepGoal,
+    goalStreak: 0,
+    missStreak: 0,
+    dayCount: 1,
+    today: const DailyInput(),
+    clearedStage: 0,
+  );
 
   int coins;
   Map<String, OrganStatus> organs;
@@ -135,15 +135,15 @@ class GameState {
   }
 
   String encode() => json.encode({
-        'coins': coins,
-        'organs': organs.map((k, v) => MapEntry(k, v.toJson())),
-        'stepGoal': stepGoal,
-        'goalStreak': goalStreak,
-        'missStreak': missStreak,
-        'dayCount': dayCount,
-        'today': today.toJson(),
-        'clearedStage': clearedStage,
-      });
+    'coins': coins,
+    'organs': organs.map((k, v) => MapEntry(k, v.toJson())),
+    'stepGoal': stepGoal,
+    'goalStreak': goalStreak,
+    'missStreak': missStreak,
+    'dayCount': dayCount,
+    'today': today.toJson(),
+    'clearedStage': clearedStage,
+  });
 
   factory GameState.decode(String source) {
     final map = json.decode(source) as Map<String, dynamic>;
@@ -161,7 +161,8 @@ class GameState {
       missStreak: map['missStreak'] as int? ?? 0,
       dayCount: map['dayCount'] as int? ?? 1,
       today: DailyInput.fromJson(
-          (map['today'] as Map<String, dynamic>?) ?? const {}),
+        (map['today'] as Map<String, dynamic>?) ?? const {},
+      ),
       clearedStage: map['clearedStage'] as int? ?? 0,
     );
   }

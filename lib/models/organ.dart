@@ -13,7 +13,9 @@ enum HealthMetric {
 
   /// 歩数と階段は量で測れるが、食事・休息・睡眠は本人の申告しかない。
   bool get isSelfReported =>
-      this == HealthMetric.meal || this == HealthMetric.rest || this == HealthMetric.sleep;
+      this == HealthMetric.meal ||
+      this == HealthMetric.rest ||
+      this == HealthMetric.sleep;
 }
 
 enum Condition {
@@ -33,6 +35,7 @@ class Organ {
     required this.metric,
     required this.role,
     required this.accent,
+    required this.unlockStage,
   });
 
   final String id;
@@ -40,6 +43,12 @@ class Organ {
   final HealthMetric metric;
   final String role;
   final Color accent;
+
+  /// このステージをクリアすると仲間になる。0なら最初からいる。
+  /// 物語で出会った順に増えていく。
+  final int unlockStage;
+
+  bool isUnlocked(int clearedStage) => clearedStage >= unlockStage;
 
   String imagePath(Condition condition) =>
       'assets/organs/$id/${id}_${condition.name}.png';
@@ -61,27 +70,28 @@ class OrganStatus {
   static const int maxHealth = 100;
 
   Condition get condition => switch (health) {
-        >= 75 => Condition.genki,
-        >= 45 => Condition.futsuu,
-        _ => Condition.fuchou,
-      };
+    >= 75 => Condition.genki,
+    >= 45 => Condition.futsuu,
+    _ => Condition.fuchou,
+  };
 
   /// 戦闘力。運動で決まる健康度が主で、レベルはそれを底上げする。
-  int power(int base) => (base * (health / 100) * (1 + (level - 1) * 0.1)).round();
+  int power(int base) =>
+      (base * (health / 100) * (1 + (level - 1) * 0.1)).round();
 
   int levelUpCost() => 500 * level;
 
   OrganStatus applyHealthDelta(int delta) => OrganStatus(
-        health: (health + delta).clamp(minHealth, maxHealth),
-        level: level,
-      );
+    health: (health + delta).clamp(minHealth, maxHealth),
+    level: level,
+  );
 
   OrganStatus leveledUp() => OrganStatus(health: health, level: level + 1);
 
   Map<String, dynamic> toJson() => {'health': health, 'level': level};
 
   factory OrganStatus.fromJson(Map<String, dynamic> json) => OrganStatus(
-        health: json['health'] as int? ?? initialHealth,
-        level: json['level'] as int? ?? 1,
-      );
+    health: json['health'] as int? ?? initialHealth,
+    level: json['level'] as int? ?? 1,
+  );
 }

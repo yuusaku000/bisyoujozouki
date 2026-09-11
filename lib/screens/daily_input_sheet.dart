@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../data/organs.dart';
 import '../data/theme.dart';
+import '../data/organs.dart';
 import '../models/daily_input.dart';
 import '../widgets/coin_text.dart';
 import '../widgets/ornate.dart';
@@ -13,10 +14,14 @@ class DailyInputSheet extends StatefulWidget {
     super.key,
     required this.initial,
     required this.stepGoal,
+    required this.clearedStage,
   });
 
   final DailyInput initial;
   final int stepGoal;
+
+  /// まだ出会っていない臓器の項目は出さない。
+  final int clearedStage;
 
   @override
   State<DailyInputSheet> createState() => _DailyInputSheetState();
@@ -24,10 +29,12 @@ class DailyInputSheet extends StatefulWidget {
 
 class _DailyInputSheetState extends State<DailyInputSheet> {
   late DailyInput _input = widget.initial;
-  late final _stepsController =
-      TextEditingController(text: _input.steps > 0 ? '${_input.steps}' : '');
-  late final _stairsController =
-      TextEditingController(text: _input.stairs > 0 ? '${_input.stairs}' : '');
+  late final _stepsController = TextEditingController(
+    text: _input.steps > 0 ? '${_input.steps}' : '',
+  );
+  late final _stairsController = TextEditingController(
+    text: _input.stairs > 0 ? '${_input.stairs}' : '',
+  );
 
   @override
   void dispose() {
@@ -36,18 +43,20 @@ class _DailyInputSheetState extends State<DailyInputSheet> {
     super.dispose();
   }
 
+  bool _has(String organId) =>
+      organById(organId).isUnlocked(widget.clearedStage);
+
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom),
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: Container(
         decoration: const BoxDecoration(
           gradient: AppColors.panelGradient,
           borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-          border: Border(
-            top: BorderSide(color: AppColors.goldDim, width: 1.2),
-          ),
+          border: Border(top: BorderSide(color: AppColors.goldDim, width: 1.2)),
         ),
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
         child: SingleChildScrollView(
@@ -69,9 +78,13 @@ class _DailyInputSheetState extends State<DailyInputSheet> {
               const Center(child: OrnateLabel('きょうの記録')),
               const SizedBox(height: 10),
               Center(
-                child: Text('目標 ${widget.stepGoal}歩',
-                    style: const TextStyle(
-                        fontSize: 13, color: AppColors.textMuted)),
+                child: Text(
+                  '目標 ${widget.stepGoal}歩',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textMuted,
+                  ),
+                ),
               ),
               const SizedBox(height: 20),
               _numberField(
@@ -82,40 +95,45 @@ class _DailyInputSheetState extends State<DailyInputSheet> {
                 onChanged: (v) =>
                     setState(() => _input = _input.copyWith(steps: v)),
               ),
-              const SizedBox(height: 14),
-              _numberField(
-                controller: _stairsController,
-                label: '上った階段',
-                suffix: '階',
-                organName: '肺',
-                onChanged: (v) =>
-                    setState(() => _input = _input.copyWith(stairs: v)),
-              ),
+              if (_has('lung')) ...[
+                const SizedBox(height: 14),
+                _numberField(
+                  controller: _stairsController,
+                  label: '上った階段',
+                  suffix: '階',
+                  organName: '肺',
+                  onChanged: (v) =>
+                      setState(() => _input = _input.copyWith(stairs: v)),
+                ),
+              ],
               const SizedBox(height: 20),
-              _toggle(
-                title: 'ちゃんと食べた',
-                subtitle: '腹八分目で、食事を抜かなかった',
-                organName: '胃',
-                value: _input.ateWell,
-                onChanged: (v) =>
-                    setState(() => _input = _input.copyWith(ateWell: v)),
-              ),
-              _toggle(
-                title: '体を休めた',
-                subtitle: '飲みすぎず、無理をしなかった',
-                organName: '肝臓',
-                value: _input.rested,
-                onChanged: (v) =>
-                    setState(() => _input = _input.copyWith(rested: v)),
-              ),
-              _toggle(
-                title: 'よく眠れた',
-                subtitle: '7時間以上、夜更かしをしなかった',
-                organName: '脳',
-                value: _input.sleptWell,
-                onChanged: (v) =>
-                    setState(() => _input = _input.copyWith(sleptWell: v)),
-              ),
+              if (_has('stomach'))
+                _toggle(
+                  title: 'ちゃんと食べた',
+                  subtitle: '腹八分目で、食事を抜かなかった',
+                  organName: '胃',
+                  value: _input.ateWell,
+                  onChanged: (v) =>
+                      setState(() => _input = _input.copyWith(ateWell: v)),
+                ),
+              if (_has('liver'))
+                _toggle(
+                  title: '体を休めた',
+                  subtitle: '飲みすぎず、無理をしなかった',
+                  organName: '肝臓',
+                  value: _input.rested,
+                  onChanged: (v) =>
+                      setState(() => _input = _input.copyWith(rested: v)),
+                ),
+              if (_has('brain'))
+                _toggle(
+                  title: 'よく眠れた',
+                  subtitle: '7時間以上、夜更かしをしなかった',
+                  organName: '脳',
+                  value: _input.sleptWell,
+                  onChanged: (v) =>
+                      setState(() => _input = _input.copyWith(sleptWell: v)),
+                ),
               const SizedBox(height: 20),
               Container(
                 width: double.infinity,
@@ -124,19 +142,27 @@ class _DailyInputSheetState extends State<DailyInputSheet> {
                   color: AppColors.hollow,
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                      color: AppColors.goldDim.withValues(alpha: 0.6)),
+                    color: AppColors.goldDim.withValues(alpha: 0.6),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    const Text('もらえるコイン',
-                        style: TextStyle(
-                            fontSize: 13, color: AppColors.textMuted)),
+                    const Text(
+                      'もらえるコイン',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
                     const Spacer(),
-                    Text(formatCoins(_input.coinsEarned),
-                        style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w900,
-                            color: AppColors.gold)),
+                    Text(
+                      formatCoins(_input.coinsEarned),
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.gold,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -180,8 +206,10 @@ class _DailyInputSheetState extends State<DailyInputSheet> {
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
             ),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 12,
+            ),
           ),
         ),
       ],
@@ -210,9 +238,13 @@ class _DailyInputSheetState extends State<DailyInputSheet> {
                   children: [
                     _labelWithOrgan(title, organName),
                     const SizedBox(height: 2),
-                    Text(subtitle,
-                        style: const TextStyle(
-                            fontSize: 12, color: AppColors.textMuted)),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -235,10 +267,11 @@ class _DailyInputSheetState extends State<DailyInputSheet> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Flexible(
-          child: Text(label,
-              overflow: TextOverflow.ellipsis,
-              style:
-                  const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+          child: Text(
+            label,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+          ),
         ),
         const SizedBox(width: 6),
         Container(
@@ -247,11 +280,14 @@ class _DailyInputSheetState extends State<DailyInputSheet> {
             color: organ.accent.withValues(alpha: 0.22),
             borderRadius: BorderRadius.circular(4),
           ),
-          child: Text(organ.name,
-              style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  color: organ.accent)),
+          child: Text(
+            organ.name,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: organ.accent,
+            ),
+          ),
         ),
       ],
     );

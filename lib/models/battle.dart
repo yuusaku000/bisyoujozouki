@@ -48,10 +48,19 @@ class BattleResult {
 /// 勝てないときに「運が悪かった」で片付けられると、運動して強くなるという
 /// 動機が働かない。負けたら素直に力不足だと分かるほうがよい。
 class Battle {
-  Battle({required this.organs, required this.stage});
+  Battle({
+    required this.organs,
+    required this.stage,
+    required this.clearedStage,
+  });
 
   final Map<String, OrganStatus> organs;
   final int stage;
+
+  /// まだ出会っていない臓器は戦えない。
+  final int clearedStage;
+
+  List<Organ> get party => unlockedOrgans(clearedStage);
 
   static const int maxTurns = 30;
   static const double partyHpFactor = 4.0;
@@ -60,7 +69,7 @@ class Battle {
       (organs[id] ?? const OrganStatus()).power(kOrganBaseAttack[id] ?? 50);
 
   int get partyMaxHp =>
-      (kOrgans.map((o) => powerOf(o.id)).reduce((a, b) => a + b) *
+      (party.map((o) => powerOf(o.id)).fold<int>(0, (a, b) => a + b) *
               partyHpFactor)
           .round();
 
@@ -88,7 +97,7 @@ class Battle {
         log.add(BattleEvent('継続ダメージ $bleed', damage: bleed));
       }
 
-      for (final organ in kOrgans) {
+      for (final organ in party) {
         if (enemyHp <= 0) break;
         final power = powerOf(organ.id);
         final weakened = debuffs.contains(Debuff.nemuke);
@@ -98,40 +107,72 @@ class Battle {
             final dmg = _damage(power, buff, weakened);
             enemyHp -= dmg;
             bleed += (power * 0.2).round();
-            log.add(BattleEvent('${organ.name}の鼓動  $dmg',
-                actorId: organ.id, damage: dmg));
+            log.add(
+              BattleEvent(
+                '${organ.name}の鼓動  $dmg',
+                actorId: organ.id,
+                damage: dmg,
+              ),
+            );
 
           case 'lung':
             // 長く戦うほど息が続く
-            final dmg = _damage((power * (1 + turn * 0.12)).round(), buff, weakened);
+            final dmg = _damage(
+              (power * (1 + turn * 0.12)).round(),
+              buff,
+              weakened,
+            );
             enemyHp -= dmg;
-            log.add(BattleEvent('${organ.name}の呼吸  $dmg',
-                actorId: organ.id, damage: dmg));
+            log.add(
+              BattleEvent(
+                '${organ.name}の呼吸  $dmg',
+                actorId: organ.id,
+                damage: dmg,
+              ),
+            );
 
           case 'stomach':
             var heal = (power * 1.2).round();
             if (debuffs.contains(Debuff.motare)) heal = (heal / 2).round();
             partyHp = min(partyMaxHp, partyHp + heal);
-            log.add(BattleEvent('${organ.name}が回復  +$heal',
-                actorId: organ.id, heal: heal));
+            log.add(
+              BattleEvent(
+                '${organ.name}が回復  +$heal',
+                actorId: organ.id,
+                heal: heal,
+              ),
+            );
 
           case 'liver':
             if (debuffs.isNotEmpty) {
               final cleared = debuffs.first;
               debuffs.remove(cleared);
-              log.add(BattleEvent('${organ.name}が${cleared.label}を解除',
-                  actorId: organ.id));
+              log.add(
+                BattleEvent(
+                  '${organ.name}が${cleared.label}を解除',
+                  actorId: organ.id,
+                ),
+              );
             } else {
               final dmg = _damage(power, buff, weakened);
               enemyHp -= dmg;
-              log.add(BattleEvent('${organ.name}の解毒  $dmg',
-                  actorId: organ.id, damage: dmg));
+              log.add(
+                BattleEvent(
+                  '${organ.name}の解毒  $dmg',
+                  actorId: organ.id,
+                  damage: dmg,
+                ),
+              );
             }
 
           case 'brain':
             buff += (power * 0.15).round();
-            log.add(BattleEvent('${organ.name}が弱点を見抜いた  攻撃力+$buff',
-                actorId: organ.id));
+            log.add(
+              BattleEvent(
+                '${organ.name}が弱点を見抜いた  攻撃力+$buff',
+                actorId: organ.id,
+              ),
+            );
         }
       }
 

@@ -23,11 +23,11 @@ class DailyInput {
   static const int maxStairs = 500;
 
   bool selfReportFor(HealthMetric metric) => switch (metric) {
-        HealthMetric.meal => ateWell,
-        HealthMetric.rest => rested,
-        HealthMetric.sleep => sleptWell,
-        _ => false,
-      };
+    HealthMetric.meal => ateWell,
+    HealthMetric.rest => rested,
+    HealthMetric.sleep => sleptWell,
+    _ => false,
+  };
 
   DailyInput copyWith({
     int? steps,
@@ -35,40 +35,41 @@ class DailyInput {
     bool? ateWell,
     bool? rested,
     bool? sleptWell,
-  }) =>
-      DailyInput(
-        steps: (steps ?? this.steps).clamp(0, maxSteps),
-        stairs: (stairs ?? this.stairs).clamp(0, maxStairs),
-        ateWell: ateWell ?? this.ateWell,
-        rested: rested ?? this.rested,
-        sleptWell: sleptWell ?? this.sleptWell,
-      );
+  }) => DailyInput(
+    steps: (steps ?? this.steps).clamp(0, maxSteps),
+    stairs: (stairs ?? this.stairs).clamp(0, maxStairs),
+    ateWell: ateWell ?? this.ateWell,
+    rested: rested ?? this.rested,
+    sleptWell: sleptWell ?? this.sleptWell,
+  );
 
   /// 歩数1歩につき1コイン。階段は登るのがしんどい分だけ割がいい。
   int get coinsEarned => steps + stairs * 50;
 
   Map<String, dynamic> toJson() => {
-        'steps': steps,
-        'stairs': stairs,
-        'ateWell': ateWell,
-        'rested': rested,
-        'sleptWell': sleptWell,
-      };
+    'steps': steps,
+    'stairs': stairs,
+    'ateWell': ateWell,
+    'rested': rested,
+    'sleptWell': sleptWell,
+  };
 
   factory DailyInput.fromJson(Map<String, dynamic> json) => DailyInput(
-        steps: (json['steps'] as int? ?? 0).clamp(0, maxSteps),
-        stairs: (json['stairs'] as int? ?? 0).clamp(0, maxStairs),
-        ateWell: json['ateWell'] as bool? ?? false,
-        rested: json['rested'] as bool? ?? false,
-        sleptWell: json['sleptWell'] as bool? ?? false,
-      );
+    steps: (json['steps'] as int? ?? 0).clamp(0, maxSteps),
+    stairs: (json['stairs'] as int? ?? 0).clamp(0, maxStairs),
+    ateWell: json['ateWell'] as bool? ?? false,
+    rested: json['rested'] as bool? ?? false,
+    sleptWell: json['sleptWell'] as bool? ?? false,
+  );
 }
 
 /// 健康度の増減。達成すれば伸び、サボれば落ちる。
 class HealthRule {
-  static const int achieved = 10;
-  static const int partial = 3;
-  static const int missed = -5;
+  // 頑張った日の手応えを大きくする。伸びが小さいと、歩いた実感が
+  // 数字に出ず、続ける理由が弱くなる。
+  static const int achieved = 18;
+  static const int partial = 6;
+  static const int missed = -6;
 
   static int deltaFor({
     required Organ organ,

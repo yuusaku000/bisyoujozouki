@@ -22,8 +22,11 @@ class BattleScreen extends StatefulWidget {
 
 class _BattleScreenState extends State<BattleScreen> {
   late final int _stage = widget.state.currentStage;
-  late final BattleResult _result =
-      Battle(organs: widget.state.organs, stage: _stage).run();
+  late final BattleResult _result = Battle(
+    organs: widget.state.organs,
+    stage: _stage,
+    clearedStage: widget.state.clearedStage,
+  ).run();
 
   final _scroll = ScrollController();
   Timer? _timer;
@@ -102,8 +105,9 @@ class _BattleScreenState extends State<BattleScreen> {
   @override
   Widget build(BuildContext context) {
     final enemy = enemyForStage(_stage);
-    final background =
-        enemy.isBoss ? 'assets/bg/bg_stomach.png' : 'assets/bg/bg_vessel.png';
+    final background = enemy.isBoss
+        ? 'assets/bg/bg_stomach.png'
+        : 'assets/bg/bg_vessel.png';
 
     return Scaffold(
       body: Stack(
@@ -120,7 +124,7 @@ class _BattleScreenState extends State<BattleScreen> {
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Image.asset(enemy.imagePath, fit: BoxFit.contain),
+                    child: _enemyFigure(enemy.imagePath),
                   ),
                 ),
                 _bar('敵', _enemyHp, _result.enemyMaxHp, AppColors.fuchou),
@@ -139,20 +143,57 @@ class _BattleScreenState extends State<BattleScreen> {
     );
   }
 
+  bool get _defeated => _enemyHp <= 0;
+
+  /// 倒れたら傾いて沈み、色が抜ける。ゲージが0になるだけだと素っ気ない。
+  Widget _enemyFigure(String path) {
+    return AnimatedSlide(
+      offset: _defeated ? const Offset(0, 0.18) : Offset.zero,
+      duration: const Duration(milliseconds: 700),
+      curve: Curves.easeIn,
+      child: AnimatedRotation(
+        turns: _defeated ? 0.055 : 0,
+        duration: const Duration(milliseconds: 700),
+        curve: Curves.easeOutBack,
+        child: AnimatedOpacity(
+          opacity: _defeated ? 0.35 : 1,
+          duration: const Duration(milliseconds: 700),
+          child: AnimatedScale(
+            scale: _defeated ? 0.92 : 1,
+            duration: const Duration(milliseconds: 700),
+            child: ColorFiltered(
+              colorFilter: ColorFilter.mode(
+                _defeated ? Colors.black54 : Colors.transparent,
+                BlendMode.srcATop,
+              ),
+              child: Image.asset(path, fit: BoxFit.contain),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _header(String enemyName) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
       child: Row(
         children: [
-          Text('ステージ $_stage',
-              style: const TextStyle(
-                  fontSize: 13, color: AppColors.textMuted, letterSpacing: 1.2)),
+          Text(
+            'ステージ $_stage',
+            style: const TextStyle(
+              fontSize: 13,
+              color: AppColors.textMuted,
+              letterSpacing: 1.2,
+            ),
+          ),
           const SizedBox(width: 10),
           Flexible(
-            child: Text(enemyName,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                    fontSize: 18, fontWeight: FontWeight.w800)),
+            child: Text(
+              enemyName,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+            ),
           ),
           const Spacer(),
           if (!_done)
@@ -179,38 +220,42 @@ class _BattleScreenState extends State<BattleScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          for (final organ in kOrgans)
-            Builder(builder: (context) {
-              final condition =
-                  (widget.state.organs[organ.id] ?? const OrganStatus())
-                      .condition;
-              final active = organ.id == acting;
-              return AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                width: active ? 58 : 48,
-                height: active ? 58 : 48,
-                margin: const EdgeInsets.symmetric(horizontal: 5),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: active ? organ.accent : AppColors.hollow,
-                    width: active ? 3 : 2,
+          for (final organ in unlockedOrgans(widget.state.clearedStage))
+            Builder(
+              builder: (context) {
+                final condition =
+                    (widget.state.organs[organ.id] ?? const OrganStatus())
+                        .condition;
+                final active = organ.id == acting;
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  width: active ? 58 : 48,
+                  height: active ? 58 : 48,
+                  margin: const EdgeInsets.symmetric(horizontal: 5),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: active ? organ.accent : AppColors.hollow,
+                      width: active ? 3 : 2,
+                    ),
+                    boxShadow: active
+                        ? [
+                            BoxShadow(
+                              color: organ.accent.withValues(alpha: 0.6),
+                              blurRadius: 12,
+                            ),
+                          ]
+                        : null,
                   ),
-                  boxShadow: active
-                      ? [
-                          BoxShadow(
-                            color: organ.accent.withValues(alpha: 0.6),
-                            blurRadius: 12,
-                          ),
-                        ]
-                      : null,
-                ),
-                child: ClipOval(
-                  child: Image.asset(organ.facePath(condition),
-                      fit: BoxFit.cover),
-                ),
-              );
-            }),
+                  child: ClipOval(
+                    child: Image.asset(
+                      organ.facePath(condition),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                );
+              },
+            ),
         ],
       ),
     );
@@ -223,9 +268,10 @@ class _BattleScreenState extends State<BattleScreen> {
         children: [
           SizedBox(
             width: 52,
-            child: Text(label,
-                style:
-                    const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+            ),
           ),
           Expanded(
             child: JewelBar(
@@ -239,10 +285,15 @@ class _BattleScreenState extends State<BattleScreen> {
           const SizedBox(width: 10),
           SizedBox(
             width: 64,
-            child: Text('$value',
-                textAlign: TextAlign.right,
-                style: TextStyle(
-                    fontSize: 13, fontWeight: FontWeight.w700, color: color)),
+            child: Text(
+              '$value',
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: color,
+              ),
+            ),
           ),
         ],
       ),
@@ -274,8 +325,8 @@ class _BattleScreenState extends State<BattleScreen> {
                 color: isTurnMark
                     ? AppColors.textMuted
                     : event.heal != null
-                        ? AppColors.genki
-                        : AppColors.textPrimary,
+                    ? AppColors.genki
+                    : AppColors.textPrimary,
               ),
             ),
           );
@@ -294,12 +345,13 @@ class _BattleScreenState extends State<BattleScreen> {
           label: !_done
               ? '戦闘中…'
               : _result.won
-                  ? 'ステージ $_stage クリア！'
-                  : 'もっと歩いてから挑もう',
+              ? 'ステージ $_stage クリア！'
+              : 'もっと歩いてから挑もう',
           gradient: _result.won
               ? AppColors.roseGradient
               : const LinearGradient(
-                  colors: [Color(0xFF4A3556), Color(0xFF2E2038)]),
+                  colors: [Color(0xFF4A3556), Color(0xFF2E2038)],
+                ),
           onPressed: _done ? () => Navigator.pop(context, _result.won) : null,
         ),
       ),

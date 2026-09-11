@@ -35,10 +35,7 @@ class OrnatePanel extends StatelessWidget {
             offset: const Offset(0, 6),
           ),
           if (glow)
-            BoxShadow(
-              color: border.withValues(alpha: 0.28),
-              blurRadius: 22,
-            ),
+            BoxShadow(color: border.withValues(alpha: 0.28), blurRadius: 22),
         ],
       ),
       child: child,
@@ -78,16 +75,16 @@ class OrnateLabel extends StatelessWidget {
   }
 
   Widget _line(Color c, bool toRight) => Container(
-        width: 22,
-        height: 1,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: toRight
-                ? [c.withValues(alpha: 0), c]
-                : [c, c.withValues(alpha: 0)],
-          ),
-        ),
-      );
+    width: 22,
+    height: 1,
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        colors: toRight
+            ? [c.withValues(alpha: 0), c]
+            : [c, c.withValues(alpha: 0)],
+      ),
+    ),
+  );
 }
 
 /// 中身が光るゲージ。素のLinearProgressIndicatorは味気ない。

@@ -46,8 +46,7 @@ class _StoryScreenState extends State<StoryScreen> {
                 gradient: RadialGradient(
                   radius: 1.1,
                   colors: [
-                    (speaker?.accent ?? AppColors.rose)
-                        .withValues(alpha: 0.22),
+                    (speaker?.accent ?? AppColors.rose).withValues(alpha: 0.22),
                     const Color(0xF2120A16),
                   ],
                 ),
@@ -58,9 +57,13 @@ class _StoryScreenState extends State<StoryScreen> {
                 alignment: Alignment.bottomCenter,
                 child: FractionallySizedBox(
                   heightFactor: 0.72,
-                  child: Image.asset(
-                    speaker.imagePath(Condition.futsuu),
-                    fit: BoxFit.contain,
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 180),
+                    child: Image.asset(
+                      speaker.imagePath(line.face),
+                      key: ValueKey('${speaker.id}_${line.face.name}'),
+                      fit: BoxFit.contain,
+                    ),
                   ),
                 ),
               ),
@@ -130,7 +133,7 @@ class _StoryScreenState extends State<StoryScreen> {
               children: [
                 ClipOval(
                   child: Image.asset(
-                    speaker.facePath(Condition.genki),
+                    speaker.facePath(line.face),
                     width: 30,
                     height: 30,
                     fit: BoxFit.cover,
@@ -173,10 +176,7 @@ class _StoryScreenState extends State<StoryScreen> {
               const Spacer(),
               Text(
                 _isLast ? 'タップでとじる' : 'タップでつづき',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.rose,
-                ),
+                style: const TextStyle(fontSize: 12, color: AppColors.rose),
               ),
             ],
           ),
@@ -198,8 +198,10 @@ class StoryListScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('ストーリー',
-            style: TextStyle(fontWeight: FontWeight.w800)),
+        title: const Text(
+          'ストーリー',
+          style: TextStyle(fontWeight: FontWeight.w800),
+        ),
         backgroundColor: AppColors.background,
       ),
       body: ListView.separated(
@@ -218,11 +220,11 @@ class StoryListScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
                 onTap: open
                     ? () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => StoryScreen(episode: episode),
-                          ),
-                        )
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => StoryScreen(episode: episode),
+                        ),
+                      )
                     : null,
                 child: OrnatePanel(
                   padding: const EdgeInsets.all(16),

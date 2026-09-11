@@ -24,19 +24,9 @@ const Map<String, Map<Condition, List<String>>> kOrganLines = {
     ],
   },
   'lung': {
-    Condition.genki: [
-      'すうーっ、はあーっ。気持ちいい空気！',
-      '深呼吸、いっしょにしよ？',
-      '階段、意外と平気だったでしょ？',
-    ],
-    Condition.futsuu: [
-      '今日はふつうの息。ふつうって安心する。',
-      'たまには窓、開けてみない？',
-    ],
-    Condition.fuchou: [
-      'すこし、息が浅いかも…ゆっくりでいいからね。',
-      'あなたが苦しくないなら、それでいい。',
-    ],
+    Condition.genki: ['すうーっ、はあーっ。気持ちいい空気！', '深呼吸、いっしょにしよ？', '階段、意外と平気だったでしょ？'],
+    Condition.futsuu: ['今日はふつうの息。ふつうって安心する。', 'たまには窓、開けてみない？'],
+    Condition.fuchou: ['すこし、息が浅いかも…ゆっくりでいいからね。', 'あなたが苦しくないなら、それでいい。'],
   },
   'stomach': {
     Condition.genki: [
@@ -44,14 +34,8 @@ const Map<String, Map<Condition, List<String>>> kOrganLines = {
       'ちゃんと噛んでくれてありがとう。えらい！',
       'おなか、いいかんじ。次もたのしみ。',
     ],
-    Condition.futsuu: [
-      'ほどほど。ほどほどが一番なんだよね。',
-      'あ、そろそろ何か食べる？',
-    ],
-    Condition.fuchou: [
-      'ちょっと、もたれてるかも…温かいもの、どう？',
-      '食べすぎても怒らないよ。ただ、ちょっと重い。',
-    ],
+    Condition.futsuu: ['ほどほど。ほどほどが一番なんだよね。', 'あ、そろそろ何か食べる？'],
+    Condition.fuchou: ['ちょっと、もたれてるかも…温かいもの、どう？', '食べすぎても怒らないよ。ただ、ちょっと重い。'],
   },
   'liver': {
     Condition.genki: [
@@ -59,14 +43,8 @@ const Map<String, Map<Condition, List<String>>> kOrganLines = {
       '休むのも仕事のうち。わたしが言うんだから間違いない。',
       '調子いいです。この調子でお願いしますね。',
     ],
-    Condition.futsuu: [
-      'まあ、こんなものでしょう。',
-      'たまには何もしない日を作ってくださいね。',
-    ],
-    Condition.fuchou: [
-      'すこし、働きすぎかもしれません…',
-      '文句は言いません。でも、気づいてほしいです。',
-    ],
+    Condition.futsuu: ['まあ、こんなものでしょう。', 'たまには何もしない日を作ってくださいね。'],
+    Condition.fuchou: ['すこし、働きすぎかもしれません…', '文句は言いません。でも、気づいてほしいです。'],
   },
   'brain': {
     Condition.genki: [
@@ -74,14 +52,8 @@ const Map<String, Map<Condition, List<String>>> kOrganLines = {
       'よく眠れた日は、世界がすこし優しく見えるね。',
       '考えごとがはかどる。いい夜だったんだね。',
     ],
-    Condition.futsuu: [
-      'まあまあ、といったところ。',
-      '眠いような、眠くないような。',
-    ],
-    Condition.fuchou: [
-      'ねむい…すこしぼんやりする。',
-      '今日は難しいことを決めないほうがいいかも。',
-    ],
+    Condition.futsuu: ['まあまあ、といったところ。', '眠いような、眠くないような。'],
+    Condition.fuchou: ['ねむい…すこしぼんやりする。', '今日は難しいことを決めないほうがいいかも。'],
   },
 };
 

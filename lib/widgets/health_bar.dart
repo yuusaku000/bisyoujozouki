@@ -5,16 +5,14 @@ import '../models/organ.dart';
 import 'ornate.dart';
 
 Color conditionColor(Condition condition) => switch (condition) {
-      Condition.genki => AppColors.genki,
-      Condition.futsuu => AppColors.futsuu,
-      Condition.fuchou => AppColors.fuchou,
-    };
+  Condition.genki => AppColors.genki,
+  Condition.futsuu => AppColors.futsuu,
+  Condition.fuchou => AppColors.fuchou,
+};
 
 Gradient conditionGradient(Condition condition) {
   final c = conditionColor(condition);
-  return LinearGradient(
-    colors: [Color.lerp(c, Colors.white, 0.35)!, c],
-  );
+  return LinearGradient(colors: [Color.lerp(c, Colors.white, 0.35)!, c]);
 }
 
 class HealthBar extends StatelessWidget {
@@ -71,10 +69,7 @@ class HealthBar extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 8),
-        JewelBar(
-          value: ratio,
-          gradient: conditionGradient(status.condition),
-        ),
+        JewelBar(value: ratio, gradient: conditionGradient(status.condition)),
       ],
     );
   }

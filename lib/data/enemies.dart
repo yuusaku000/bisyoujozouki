@@ -67,26 +67,25 @@ Enemy enemyForStage(int stage) {
 /// 進むほど強くなる。10ステージで約2倍。
 double stageScale(int stage) => 1 + (stage - 1) * 0.1;
 
-/// 何周目の相手か。ボスを超えると同じ顔ぶれが戻ってくる。
-int loopOfStage(int stage) => (stage - 1) ~/ 10;
+/// その敵が何度目の登場か。同じ顔が何度も出るので、出るたびに数える。
+int encounterIndexOf(int stage) {
+  final id = enemyForStage(stage).id;
+  var count = 0;
+  for (var s = 1; s < stage; s++) {
+    if (enemyForStage(s).id == id) count++;
+  }
+  return count;
+}
 
-// 周回が進むごとに、同じ敵でも呼び名が変わる。同じ名前が並ぶと
-// 進んでいる実感が薄れるため。
-const List<String> _loopSuffixes = [
-  '',
-  '・改',
-  '・覚醒',
-  '・真',
-  '・極',
-  '・災禍',
-];
+// 出てくるたびに呼び名が変わる。同じ名前が並ぶと、進んでいる実感が薄れる。
+const List<String> _rankSuffixes = ['', '・改', '・覚醒', '・真', '・極', '・煉獄', '・災禍'];
 
 String enemyNameForStage(int stage) {
   final enemy = enemyForStage(stage);
-  final loop = loopOfStage(stage);
-  if (loop <= 0) return enemy.name;
-  final suffix = loop < _loopSuffixes.length
-      ? _loopSuffixes[loop]
-      : '・災禍${loop - _loopSuffixes.length + 2}';
+  final rank = encounterIndexOf(stage);
+  if (rank <= 0) return enemy.name;
+  final suffix = rank < _rankSuffixes.length
+      ? _rankSuffixes[rank]
+      : '・災禍${rank - _rankSuffixes.length + 2}';
   return '${enemy.name}$suffix';
 }

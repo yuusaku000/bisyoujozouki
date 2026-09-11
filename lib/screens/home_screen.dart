@@ -12,6 +12,7 @@ import '../services/step_source.dart';
 import '../widgets/coin_text.dart';
 import '../widgets/health_bar.dart';
 import '../widgets/ornate.dart';
+import '../widgets/top_toast.dart';
 import 'battle_screen.dart';
 import 'daily_input_sheet.dart';
 import 'story_screen.dart';
@@ -60,8 +61,11 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) =>
-          DailyInputSheet(initial: state.today, stepGoal: state.stepGoal),
+      builder: (_) => DailyInputSheet(
+        initial: state.today,
+        stepGoal: state.stepGoal,
+        clearedStage: state.clearedStage,
+      ),
     );
     if (input == null || !mounted) return;
 
@@ -76,6 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _goToBattle() async {
     final state = _state!;
     final stage = state.currentStage;
+    final clearedBefore = state.clearedStage;
     await Navigator.push<bool>(
       context,
       MaterialPageRoute(builder: (_) => BattleScreen(state: state)),
@@ -85,6 +90,7 @@ class _HomeScreenState extends State<HomeScreen> {
     await _persist();
 
     // 読みたくなったときに読めればいい。勝った直後に読書を強制しない。
+    _announceOrgans(clearedBefore, state.clearedStage);
     final episode = episodeForStage(stage);
     if (episode != null && state.clearedStage >= stage && mounted) {
       _announceEpisode(episode);
@@ -92,37 +98,19 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _announceEpisode(StoryEpisode episode) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: AppColors.panelTop,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-          side: BorderSide(color: AppColors.gold.withValues(alpha: 0.6)),
-        ),
-        duration: const Duration(seconds: 5),
-        content: Row(
-          children: [
-            const Icon(Icons.auto_stories, color: AppColors.gold, size: 20),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                '「${episode.title}」が読めるようになりました',
-                style: const TextStyle(fontSize: 13),
-              ),
-            ),
-          ],
-        ),
-        action: SnackBarAction(
-          label: '読む',
-          textColor: AppColors.rose,
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => StoryScreen(episode: episode)),
-          ),
-        ),
-      ),
+    showTopToast(
+      context,
+      '「${episode.title}」を読めるようになりました',
+      icon: Icons.auto_stories,
     );
+  }
+
+  void _announceOrgans(int before, int after) {
+    for (final organ in kOrgans) {
+      if (organ.unlockStage > before && organ.unlockStage <= after) {
+        showTopToast(context, '${organ.name}が仲間になりました', icon: Icons.favorite);
+      }
+    }
   }
 
   void _openStoryList() {
@@ -154,8 +142,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     const Text(
                       '獲得コイン',
-                      style:
-                          TextStyle(fontSize: 13, color: AppColors.textMuted),
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textMuted,
+                      ),
                     ),
                     const Spacer(),
                     Text(
@@ -169,7 +159,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
                 const SizedBox(height: 14),
-                for (final organ in kOrgans)
+                for (final organ in unlockedOrgans(_state!.clearedStage))
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     child: Row(
@@ -183,8 +173,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         const SizedBox(width: 10),
-                        Text(organ.name,
-                            style: const TextStyle(fontSize: 14)),
+                        Text(organ.name, style: const TextStyle(fontSize: 14)),
                         const Spacer(),
                         _deltaChip(result.healthDeltas[organ.id] ?? 0),
                       ],
@@ -196,8 +185,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     result.goalAchieved
                         ? '続けられているので、目標を${result.newStepGoal}歩に上げました'
                         : '目標を${result.newStepGoal}歩に下げました。まずは届く数から',
-                    style:
-                        const TextStyle(fontSize: 12, color: AppColors.rose),
+                    style: const TextStyle(fontSize: 12, color: AppColors.rose),
                   ),
                 ],
                 const SizedBox(height: 20),
@@ -380,9 +368,7 @@ class _HomeScreenState extends State<HomeScreen> {
           decoration: BoxDecoration(
             gradient: AppColors.roseGradient,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.3),
-            ),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -400,8 +386,10 @@ class _HomeScreenState extends State<HomeScreen> {
               if (unlocked > 0) ...[
                 const SizedBox(width: 6),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 1,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.28),
                     borderRadius: BorderRadius.circular(10),
@@ -497,12 +485,19 @@ class _HomeScreenState extends State<HomeScreen> {
         itemBuilder: (context, i) {
           final organ = kOrgans[i];
           final selected = i == _selected;
+          final unlocked = organ.isUnlocked(state.clearedStage);
           final condition = state.statusOf(organ.id).condition;
           return GestureDetector(
-            onTap: () => setState(() {
-              _selected = i;
-              _talkCount = 0;
-            }),
+            onTap: unlocked
+                ? () => setState(() {
+                    _selected = i;
+                    _talkCount = 0;
+                  })
+                : () => showTopToast(
+                    context,
+                    'ステージ ${organ.unlockStage} をこえると出会えます',
+                    icon: Icons.lock,
+                  ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -528,10 +523,36 @@ class _HomeScreenState extends State<HomeScreen> {
                         : null,
                   ),
                   child: ClipOval(
-                    child: Image.asset(
-                      organ.facePath(condition),
-                      fit: BoxFit.cover,
-                    ),
+                    child: unlocked
+                        ? Image.asset(
+                            organ.facePath(condition),
+                            fit: BoxFit.cover,
+                          )
+                        : Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              ColorFiltered(
+                                colorFilter: const ColorFilter.matrix([
+                                  0.2126, 0.7152, 0.0722, 0, 0, //
+                                  0.2126, 0.7152, 0.0722, 0, 0, //
+                                  0.2126, 0.7152, 0.0722, 0, 0, //
+                                  0, 0, 0, 1, 0,
+                                ]),
+                                child: Image.asset(
+                                  organ.facePath(Condition.futsuu),
+                                  fit: BoxFit.cover,
+                                  opacity: const AlwaysStoppedAnimation(0.35),
+                                ),
+                              ),
+                              const Center(
+                                child: Icon(
+                                  Icons.lock,
+                                  size: 20,
+                                  color: AppColors.gold,
+                                ),
+                              ),
+                            ],
+                          ),
                   ),
                 ),
                 const SizedBox(height: 5),
@@ -539,7 +560,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   width: 20,
                   height: 3,
                   decoration: BoxDecoration(
-                    color: conditionColor(condition),
+                    color: unlocked
+                        ? conditionColor(condition)
+                        : AppColors.goldDim.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -575,8 +598,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(width: 10),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 9, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     gradient: AppColors.goldGradient,
                     borderRadius: BorderRadius.circular(8),
