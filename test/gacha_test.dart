@@ -168,6 +168,18 @@ void main() {
       expect(open.every((e) => e.organId == 'heart'), isTrue);
     });
 
+    test('全員に♡2から♡5まで揃っている', () {
+      for (final organ in ['heart', 'lung', 'stomach', 'liver', 'brain']) {
+        final hearts = episodesForOrgan(organ).map((e) => e.requiredHearts);
+        expect(hearts.toSet(), {2, 3, 4, 5}, reason: '$organ に抜けがある');
+      }
+    });
+
+    test('鍵が重複しない', () {
+      final keys = kCharaStory.map((e) => e.key).toList();
+      expect(keys.toSet().length, keys.length);
+    });
+
     test('必要なハートは5以下', () {
       for (final episode in kCharaStory) {
         expect(

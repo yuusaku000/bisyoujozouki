@@ -15,7 +15,7 @@ import 'battle_screen.dart';
 import 'daily_input_sheet.dart';
 import 'mission_sheet.dart';
 import 'settings_screen.dart';
-import 'story_screen.dart';
+import 'story_list_screen.dart';
 
 /// 会いに来る場所。数字をいじるのは育成タブに置いてある。
 class HomeTab extends StatefulWidget {

@@ -5,6 +5,7 @@ import '../data/theme.dart';
 import '../models/game_state.dart';
 import '../models/present.dart';
 import '../widgets/ornate.dart';
+import 'gacha_reveal.dart';
 
 /// チケットを使ってプレゼントを引く。出たものは臓器に渡して親密度になる。
 class GachaTab extends StatefulWidget {
@@ -24,6 +25,19 @@ class _GachaTabState extends State<GachaTab> {
     final results = state.pull(ten: ten);
     if (results.isEmpty) return;
     widget.onChanged();
+
+    final best = results.reduce(
+      (a, b) => b.rarity.stars > a.rarity.stars ? b : a,
+    );
+    await Navigator.push(
+      context,
+      PageRouteBuilder<void>(
+        opaque: false,
+        transitionDuration: const Duration(milliseconds: 200),
+        pageBuilder: (_, _, _) => GachaReveal(best: best.rarity),
+      ),
+    );
+    if (!mounted) return;
     await _showResults(results);
   }
 

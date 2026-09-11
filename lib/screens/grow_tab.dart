@@ -132,7 +132,7 @@ class _GrowTabState extends State<GrowTab> {
               _header(),
               const Spacer(),
               if (_reaction != null) _reactionBubble(organ),
-              _dots(party.length),
+              _faceStrip(party),
               const SizedBox(height: 8),
               _panel(organ, status),
             ],
@@ -248,21 +248,80 @@ class _GrowTabState extends State<GrowTab> {
     );
   }
 
-  Widget _dots(int count) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        for (var i = 0; i < count; i++)
-          Container(
-            width: i == _index ? 18 : 6,
-            height: 6,
-            margin: const EdgeInsets.symmetric(horizontal: 3),
-            decoration: BoxDecoration(
-              color: i == _index ? AppColors.rose : AppColors.hollow,
-              borderRadius: BorderRadius.circular(3),
+  /// 横スワイプだけだと切り替えられることに気づけない。顔を並べて押せるようにする。
+  Widget _faceStrip(List<Organ> party) {
+    return SizedBox(
+      height: 54,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        shrinkWrap: true,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: party.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 10),
+        itemBuilder: (context, i) {
+          final organ = party[i];
+          final selected = i == _index;
+          final status = state.statusOf(organ.id);
+          return GestureDetector(
+            onTap: () {
+              _pages.animateToPage(
+                i,
+                duration: const Duration(milliseconds: 280),
+                curve: Curves.easeOutCubic,
+              );
+              setState(() {
+                _index = i;
+                _reaction = null;
+              });
+            },
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  width: selected ? 42 : 36,
+                  height: selected ? 42 : 36,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: selected
+                          ? organ.accent
+                          : AppColors.goldDim.withValues(alpha: 0.6),
+                      width: selected ? 2.4 : 1.4,
+                    ),
+                    boxShadow: selected
+                        ? [
+                            BoxShadow(
+                              color: organ.accent.withValues(alpha: 0.55),
+                              blurRadius: 12,
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: ClipOval(
+                    child: Image.asset(
+                      organ.facePath(status.condition),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    for (var h = 0; h < status.hearts; h++)
+                      const Icon(
+                        Icons.favorite,
+                        size: 7,
+                        color: AppColors.rose,
+                      ),
+                  ],
+                ),
+              ],
             ),
-          ),
-      ],
+          );
+        },
+      ),
     );
   }
 

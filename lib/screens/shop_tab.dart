@@ -17,7 +17,7 @@ class ShopTab extends StatelessWidget {
   static const int ticketPrice = 2500;
 
   void _buyBundle(BuildContext context) {
-    final price = ticketPrice * 9;
+    final price = ticketPrice * 10;
     if (state.coins < price) return;
     state.coins -= price;
     state.tickets += 10;
@@ -99,8 +99,8 @@ class ShopTab extends StatelessWidget {
                     icon: Icons.confirmation_number,
                     color: AppColors.gold,
                     name: 'ガチャチケット ×10',
-                    detail: 'まとめ買い。1枚ぶん安い',
-                    price: ticketPrice * 9,
+                    detail: '10連ぶんをまとめて',
+                    price: ticketPrice * 10,
                     owned: state.tickets,
                     onBuy: () => _buyBundle(context),
                   ),
