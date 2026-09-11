@@ -67,6 +67,14 @@ Enemy enemyForStage(int stage) {
 /// 進むほど強くなる。10ステージで約2倍。
 double stageScale(int stage) => 1 + (stage - 1) * 0.1;
 
+Enemy? enemyById(String id) {
+  if (id == kBoss.id) return kBoss;
+  for (final e in kEnemies) {
+    if (e.id == id) return e;
+  }
+  return null;
+}
+
 /// その敵が何度目の登場か。同じ顔が何度も出るので、出るたびに数える。
 int encounterIndexOf(int stage) {
   final id = enemyForStage(stage).id;

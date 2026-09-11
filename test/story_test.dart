@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zoukicchi/data/lines.dart';
+import 'package:zoukicchi/data/enemies.dart';
 import 'package:zoukicchi/data/organs.dart';
 import 'package:zoukicchi/data/story.dart';
 import 'package:zoukicchi/models/organ.dart';
@@ -62,6 +63,32 @@ void main() {
 
     test('ボスのステージに話がある', () {
       expect(episodeForStage(10), isNotNull);
+    });
+
+    test('指定された敵はすべて実在する', () {
+      for (final episode in kStory) {
+        for (final line in episode.lines) {
+          if (line.enemyId != null) {
+            expect(
+              enemyById(line.enemyId!),
+              isNotNull,
+              reason: '${episode.title} に知らない敵がいる',
+            );
+          }
+        }
+      }
+    });
+
+    test('ボス前後の話にはボスが姿を見せる', () {
+      // 相手が見えないまま「この先に何かいる」と言われても伝わらない
+      for (final stage in [9, 10]) {
+        final episode = episodeForStage(stage)!;
+        expect(
+          episode.lines.any((l) => l.enemyId == 'boss_seikatsu'),
+          isTrue,
+          reason: '${episode.title} にボスが出てこない',
+        );
+      }
     });
   });
 

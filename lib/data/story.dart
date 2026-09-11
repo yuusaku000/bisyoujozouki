@@ -1,7 +1,12 @@
 import '../models/organ.dart';
 
 class StoryLine {
-  const StoryLine(this.text, {this.speakerId, this.face = Condition.futsuu});
+  const StoryLine(
+    this.text, {
+    this.speakerId,
+    this.face = Condition.futsuu,
+    this.enemyId,
+  });
 
   /// nullなら地の文。
   final String? speakerId;
@@ -9,6 +14,10 @@ class StoryLine {
 
   /// その行での表情。1枚絵のまま喋り続けると芝居が死ぬ。
   final Condition face;
+
+  /// 画面に出す敵。指定すると臓器の立ち絵の代わりにこちらが立つ。
+  /// 相手の姿が見えないまま「この先に何かいる」と言われても伝わらない。
+  final String? enemyId;
 }
 
 class StoryEpisode {
@@ -34,7 +43,7 @@ const List<StoryEpisode> kStory = [
     stage: 1,
     title: 'はじめて、目が合った',
     lines: [
-      StoryLine('深夜のラーメンが、湯気ごと消えていった。'),
+      StoryLine('深夜のラーメンが、湯気ごと消えていった。', enemyId: 'ramen'),
       StoryLine('静かになった胸の奥。そこに、彼女は立っていた。'),
       StoryLine('……あ。', speakerId: 'heart', face: _fuchou),
       StoryLine('ほんとに、聞こえてるんだ。', speakerId: 'heart', face: _futsuu),
@@ -80,7 +89,7 @@ const List<StoryEpisode> kStory = [
     stage: 3,
     title: 'もっと、かまって',
     lines: [
-      StoryLine('エレベーターの扉が閉じ、静けさが戻る。'),
+      StoryLine('エレベーターの扉が閉じ、静けさが戻る。', enemyId: 'elevator'),
       StoryLine('ねえねえっ、今日のごはん、どうだった？', speakerId: 'stomach', face: _genki),
       StoryLine('小柄な女の子がスプーンを振りながら、距離をつめてきた。'),
       StoryLine(
@@ -208,8 +217,19 @@ const List<StoryEpisode> kStory = [
     title: 'その扉のむこう',
     lines: [
       StoryLine('奥へ進むほど、空気が重くなっていく。'),
-      StoryLine('この先……なにか、います。', speakerId: 'lung', face: _fuchou),
-      StoryLine('大きいよ。今までのと、ぜんぜん違う。', speakerId: 'stomach', face: _fuchou),
+      StoryLine('扉の隙間から、黒い靄が漏れていた。', enemyId: 'boss_seikatsu'),
+      StoryLine(
+        'この先……なにか、います。',
+        speakerId: 'lung',
+        face: _fuchou,
+        enemyId: 'boss_seikatsu',
+      ),
+      StoryLine(
+        '大きいよ。今までのと、ぜんぜん違う。',
+        speakerId: 'stomach',
+        face: _fuchou,
+        enemyId: 'boss_seikatsu',
+      ),
       StoryLine('五人が、扉の前で足を止めた。'),
       StoryLine('引き返しても、誰も責めません。', speakerId: 'liver', face: _futsuu),
       StoryLine('でも、放っておけば大きくなるだけ。', speakerId: 'brain', face: _futsuu),
@@ -223,11 +243,21 @@ const List<StoryEpisode> kStory = [
     stage: 10,
     title: 'あなたを、わたさない',
     lines: [
-      StoryLine('それは、はじめから奥にいた。'),
-      StoryLine('黒い塊の表面で、見覚えのあるものが脈打っている。'),
-      StoryLine('食べたもの。眠らなかった夜。座っていた時間。'),
-      StoryLine('……こいつ、新しく現れたんじゃない。', speakerId: 'heart', face: _fuchou),
-      StoryLine('あなたが積み上げてきたものが、形になっただけです。', speakerId: 'liver', face: _futsuu),
+      StoryLine('それは、はじめから奥にいた。', enemyId: 'boss_seikatsu'),
+      StoryLine('黒い塊の表面で、見覚えのあるものが脈打っている。', enemyId: 'boss_seikatsu'),
+      StoryLine('食べたもの。眠らなかった夜。座っていた時間。', enemyId: 'boss_seikatsu'),
+      StoryLine(
+        '……こいつ、新しく現れたんじゃない。',
+        speakerId: 'heart',
+        face: _fuchou,
+        enemyId: 'boss_seikatsu',
+      ),
+      StoryLine(
+        'あなたが積み上げてきたものが、形になっただけです。',
+        speakerId: 'liver',
+        face: _futsuu,
+        enemyId: 'boss_seikatsu',
+      ),
       StoryLine('こわい？', speakerId: 'brain', face: _futsuu),
       StoryLine('だいじょうぶ。息は、わたしが続かせます。', speakerId: 'lung', face: _genki),
       StoryLine('おなかも、すかせないよ！', speakerId: 'stomach', face: _genki),

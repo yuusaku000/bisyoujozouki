@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../data/enemies.dart';
 import '../data/organs.dart';
 import '../data/story.dart';
 import '../data/theme.dart';
+import '../models/enemy.dart';
 import '../models/organ.dart';
 import '../widgets/ornate.dart';
 
@@ -50,6 +52,7 @@ class _StoryScreenState extends State<StoryScreen> {
   Widget build(BuildContext context) {
     final line = widget.episode.lines[_index];
     final speaker = line.speakerId == null ? null : organById(line.speakerId!);
+    final enemy = line.enemyId == null ? null : enemyById(line.enemyId!);
 
     return Scaffold(
       body: GestureDetector(
@@ -57,19 +60,34 @@ class _StoryScreenState extends State<StoryScreen> {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            Image.asset('assets/bg/bg_home.png', fit: BoxFit.cover),
+            // 敵と対峙している場面で部屋が映っていると緊張感が消える
+            Image.asset(
+              enemy == null
+                  ? 'assets/bg/bg_home.png'
+                  : enemy.isBoss
+                  ? 'assets/bg/bg_stomach.png'
+                  : 'assets/bg/bg_vessel.png',
+              fit: BoxFit.cover,
+            ),
             DecoratedBox(
               decoration: BoxDecoration(
                 gradient: RadialGradient(
                   radius: 1.1,
                   colors: [
-                    (speaker?.accent ?? AppColors.rose).withValues(alpha: 0.22),
+                    // 敵が出ている行は空気ごと暗くする
+                    enemy != null
+                        ? const Color(0xFF3A1020).withValues(alpha: 0.55)
+                        : (speaker?.accent ?? AppColors.rose).withValues(
+                            alpha: 0.22,
+                          ),
                     const Color(0xF2120A16),
                   ],
                 ),
               ),
             ),
-            if (speaker != null)
+            if (enemy != null)
+              _enemyFigure(enemy)
+            else if (speaker != null)
               Align(
                 alignment: Alignment.bottomCenter,
                 child: FractionallySizedBox(
@@ -94,6 +112,29 @@ class _StoryScreenState extends State<StoryScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// 敵は画面の上半分に大きく据える。臓器の立ち絵と同じ位置に置くと、
+  /// 仲間の一人のように見えてしまう。
+  Widget _enemyFigure(Enemy enemy) {
+    return Align(
+      alignment: const Alignment(0, -0.28),
+      child: FractionallySizedBox(
+        heightFactor: 0.56,
+        widthFactor: 0.86,
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 260),
+          child: ColorFiltered(
+            key: ValueKey(enemy.id),
+            colorFilter: const ColorFilter.mode(
+              Color(0x33000000),
+              BlendMode.srcATop,
+            ),
+            child: Image.asset(enemy.imagePath, fit: BoxFit.contain),
+          ),
         ),
       ),
     );
@@ -204,7 +245,7 @@ class _StoryScreenState extends State<StoryScreen> {
 }
 
 /// 解放済みの話の一覧。
-class StoryListScreen extends StatelessWidget {
+class StoryListScreen extends StatefulWidget {
   const StoryListScreen({
     super.key,
     required this.clearedStage,
@@ -215,6 +256,28 @@ class StoryListScreen extends StatelessWidget {
   final int clearedStage;
   final Set<int> readEpisodes;
   final void Function(int stage)? onRead;
+
+  @override
+  State<StoryListScreen> createState() => _StoryListScreenState();
+}
+
+class _StoryListScreenState extends State<StoryListScreen> {
+  int get clearedStage => widget.clearedStage;
+  Set<int> get readEpisodes => widget.readEpisodes;
+
+  /// 読み終えて戻ってきたら、しるしを消すために組み直す。
+  Future<void> _open(StoryEpisode episode) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => StoryScreen(
+          episode: episode,
+          onRead: () => widget.onRead?.call(episode.stage),
+        ),
+      ),
+    );
+    if (mounted) setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -258,17 +321,7 @@ class StoryListScreen extends StatelessWidget {
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
-        onTap: open
-            ? () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => StoryScreen(
-                    episode: episode,
-                    onRead: () => onRead?.call(episode.stage),
-                  ),
-                ),
-              )
-            : null,
+        onTap: open ? () => _open(episode) : null,
         child: OrnatePanel(
           padding: const EdgeInsets.all(16),
           borderColor: open ? AppColors.rose : AppColors.goldDim,
