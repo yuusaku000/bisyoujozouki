@@ -195,11 +195,35 @@ void main() {
       expect(open.every((e) => e.organId == 'heart'), isTrue);
     });
 
-    test('全員に♡2から♡5まで揃っている', () {
+    test('全員に♡1から♡5まで揃っている', () {
       for (final organ in ['heart', 'lung', 'stomach', 'liver', 'brain']) {
         final hearts = episodesForOrgan(organ).map((e) => e.requiredHearts);
-        expect(hearts.toSet(), {2, 3, 4, 5}, reason: '$organ に抜けがある');
+        expect(hearts.toSet(), {1, 2, 3, 4, 5}, reason: '$organ に抜けがある');
       }
+    });
+
+    test('一覧に出る順がハートの少ない順になっている', () {
+      // 画面は配列順に並べる。♡5が先頭に来ると、読む順が逆になる
+      for (final organ in ['heart', 'lung', 'stomach', 'liver', 'brain']) {
+        final hearts = episodesForOrgan(
+          organ,
+        ).map((e) => e.requiredHearts).toList();
+        final sorted = [...hearts]..sort();
+        expect(hearts, sorted, reason: '$organ の並びが前後している');
+      }
+    });
+
+    test('♡1から読みはじめられる', () {
+      // 最初の1つが♡2からだと、出会ってしばらく何も読めない
+      final state = GameState.fresh();
+      state.organs['liver'] = OrganStatus(
+        affection: OrganStatus.heartThresholds[1],
+      );
+
+      final open = unlockedCharaEpisodes(state.heartsOf);
+      expect(open, hasLength(1));
+      expect(open.single.requiredHearts, 1);
+      expect(open.single.organId, 'liver');
     });
 
     test('鍵が重複しない', () {

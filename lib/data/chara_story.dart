@@ -3,7 +3,8 @@ import 'story.dart';
 /// 親密度で開く、その子との二人きりの話。
 ///
 /// 上がるのはプレゼントだけなので、渡したものの積み重ねがそのまま距離になる。
-/// ♡2から♡5まで、近づくほど言えることが変わっていく。
+/// ♡1から♡5まで、近づくほど言えることが変わっていく。
+/// ♡1はまだ距離がある。用がないと話しかけられない側の、最初の一回。
 class CharaEpisode {
   const CharaEpisode({
     required this.organId,
@@ -28,6 +29,20 @@ const _fuchou = StoryFace.fuchou;
 
 const List<CharaEpisode> kCharaStory = [
   // ── 心臓 ──
+  CharaEpisode(
+    organId: 'heart',
+    requiredHearts: 1,
+    title: 'そんなに見ないで',
+    lines: [
+      StoryLine('……なに？　じっと見て。', speakerId: 'heart', face: _futsuu),
+      StoryLine('彼女は胸元を手でおさえるようにした。'),
+      StoryLine('見られると、速くなっちゃうからやめて。', speakerId: 'heart', face: _fuchou),
+      StoryLine('……ううん。いやじゃないよ。いやじゃないけど。', speakerId: 'heart', face: _futsuu),
+      StoryLine('慣れてないの。こうやって、用もないのに来られるの。', speakerId: 'heart', face: _fuchou),
+      StoryLine('彼女は小さく息をついて、それから顔を上げた。'),
+      StoryLine('……また来ていいよ。次はもうちょっと、ちゃんと話す。', speakerId: 'heart', face: _genki),
+    ],
+  ),
   CharaEpisode(
     organId: 'heart',
     requiredHearts: 2,
@@ -91,6 +106,28 @@ const List<CharaEpisode> kCharaStory = [
   // ── 肺 ──
   CharaEpisode(
     organId: 'lung',
+    requiredHearts: 1,
+    title: '用がなくても',
+    lines: [
+      StoryLine('あ、こっち……来るんですか。', speakerId: 'lung', face: _fuchou),
+      StoryLine('彼女は一歩下がって、それから思い直したように止まった。'),
+      StoryLine('すみません。なにか苦しいのかと思って。', speakerId: 'lung', face: _futsuu),
+      StoryLine(
+        'わたし、思い出してもらえるのは、たいてい苦しいときなので。',
+        speakerId: 'lung',
+        face: _futsuu,
+      ),
+      StoryLine('息が切れた、とか。胸が痛い、とか。', speakerId: 'lung', face: _fuchou),
+      StoryLine('そこまで言って、彼女はあわてて首を振った。'),
+      StoryLine(
+        'あ、文句じゃないです。……その、うれしい、ってことです。',
+        speakerId: 'lung',
+        face: _genki,
+      ),
+    ],
+  ),
+  CharaEpisode(
+    organId: 'lung',
     requiredHearts: 2,
     title: '風の通る場所',
     lines: [
@@ -147,6 +184,28 @@ const List<CharaEpisode> kCharaStory = [
   ),
 
   // ── 胃 ──
+  CharaEpisode(
+    organId: 'stomach',
+    requiredHearts: 1,
+    title: 'おなかの音',
+    lines: [
+      StoryLine('あっ、来た来た！　ねえ、さっきの聞こえた？', speakerId: 'stomach', face: _genki),
+      StoryLine('彼女は自分のおなかをぽんぽんと叩いてみせた。'),
+      StoryLine('あの音、わたしだよ。恥ずかしがらないでよね。', speakerId: 'stomach', face: _genki),
+      StoryLine(
+        '準備できてますよー、って言ってるだけなんだから。',
+        speakerId: 'stomach',
+        face: _futsuu,
+      ),
+      StoryLine(
+        '……あ、でも。聞こえないふりされると、しょんぼりする。',
+        speakerId: 'stomach',
+        face: _fuchou,
+      ),
+      StoryLine('彼女は上目づかいにこちらをのぞきこんだ。'),
+      StoryLine('だから、鳴ったら返事してね。……ね、約束！', speakerId: 'stomach', face: _genki),
+    ],
+  ),
   CharaEpisode(
     organId: 'stomach',
     requiredHearts: 2,
@@ -223,6 +282,20 @@ const List<CharaEpisode> kCharaStory = [
   // ── 肝臓 ──
   CharaEpisode(
     organId: 'liver',
+    requiredHearts: 1,
+    title: '報告することは',
+    lines: [
+      StoryLine('彼女は顔も上げずに、書類にペンを走らせていた。'),
+      StoryLine('……ご用件は。報告することは、特にありません。', speakerId: 'liver', face: _futsuu),
+      StoryLine('数値はすべて正常の範囲内。問題ありません。', speakerId: 'liver', face: _futsuu),
+      StoryLine('沈黙が落ちた。ペンの音だけが続いている。'),
+      StoryLine('……まだ、いらっしゃるんですか。', speakerId: 'liver', face: _fuchou),
+      StoryLine('彼女は一度だけ、ちらりとこちらを見た。'),
+      StoryLine('……いえ。どうぞ、お好きなだけ。', speakerId: 'liver', face: _futsuu),
+    ],
+  ),
+  CharaEpisode(
+    organId: 'liver',
     requiredHearts: 2,
     title: '報告書',
     lines: [
@@ -280,6 +353,20 @@ const List<CharaEpisode> kCharaStory = [
   ),
 
   // ── 脳 ──
+  CharaEpisode(
+    organId: 'brain',
+    requiredHearts: 1,
+    title: '理由のない一行',
+    lines: [
+      StoryLine('彼女はページをめくる手を止めないまま言った。'),
+      StoryLine('来たね。……用件は？', speakerId: 'brain', face: _futsuu),
+      StoryLine('ないの。じゃあ、なんで来たんだろう。', speakerId: 'brain', face: _futsuu),
+      StoryLine('彼女はようやく顔を上げて、すこし首をかしげた。'),
+      StoryLine('理由のない行動は、しまう場所に困るんだけど。', speakerId: 'brain', face: _fuchou),
+      StoryLine('ペンの音。彼女は新しい一行を書き足した。'),
+      StoryLine('……まあ、いいや。「来た」とだけ書いておく。', speakerId: 'brain', face: _genki),
+    ],
+  ),
   CharaEpisode(
     organId: 'brain',
     requiredHearts: 2,
