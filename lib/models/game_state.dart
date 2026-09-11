@@ -30,6 +30,7 @@ class GameState {
     required this.missStreak,
     required this.dayCount,
     required this.today,
+    required this.clearedStage,
   });
 
   factory GameState.fresh() => GameState(
@@ -40,6 +41,7 @@ class GameState {
         missStreak: 0,
         dayCount: 1,
         today: const DailyInput(),
+        clearedStage: 0,
       );
 
   int coins;
@@ -49,6 +51,17 @@ class GameState {
   int missStreak;
   int dayCount;
   DailyInput today;
+  int clearedStage;
+
+  int get currentStage => clearedStage + 1;
+
+  /// バトルに勝ってもコインは出さない。
+  ///
+  /// 報酬でコインを配ると「バトル→コイン→レベル→強くなる」の輪が閉じ、
+  /// 歩かなくても強くなれてしまう。強さの源は運動だけに保つ。
+  void clearStage(int stage) {
+    if (stage == currentStage) clearedStage = stage;
+  }
 
   // 運動習慣のない人が対象なので、最初の目標は達成できる高さから始める。
   static const int initialStepGoal = 3000;
@@ -129,6 +142,7 @@ class GameState {
         'missStreak': missStreak,
         'dayCount': dayCount,
         'today': today.toJson(),
+        'clearedStage': clearedStage,
       });
 
   factory GameState.decode(String source) {
@@ -148,6 +162,7 @@ class GameState {
       dayCount: map['dayCount'] as int? ?? 1,
       today: DailyInput.fromJson(
           (map['today'] as Map<String, dynamic>?) ?? const {}),
+      clearedStage: map['clearedStage'] as int? ?? 0,
     );
   }
 }

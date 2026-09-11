@@ -8,6 +8,7 @@ import '../models/organ.dart';
 import '../services/save_store.dart';
 import '../services/step_source.dart';
 import '../widgets/health_bar.dart';
+import 'battle_screen.dart';
 import 'daily_input_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -148,6 +149,17 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _goToBattle() async {
+    final state = _state!;
+    await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => BattleScreen(state: state)),
+    );
+    if (!mounted) return;
+    setState(() {});
+    await _persist();
   }
 
   void _levelUp() {
@@ -374,6 +386,23 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _goToBattle,
+              icon: const Icon(Icons.local_fire_department, size: 18),
+              label: Text('ステージ ${state.currentStage} に挑む'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.textPrimary,
+                side: const BorderSide(color: AppColors.panelAlt),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
           ),
         ],
       ),
