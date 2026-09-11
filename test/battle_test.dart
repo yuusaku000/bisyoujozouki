@@ -91,13 +91,37 @@ void main() {
       // 同じ名前が並ぶと進んでいる実感が薄れる
       expect(enemyNameForStage(1), '深夜のラーメン');
       expect(enemyNameForStage(7), '深夜のラーメン・改');
-      expect(enemyNameForStage(11), '深夜のラーメン・覚醒');
+    });
+
+    test('1戦目は一番弱い相手', () {
+      // 仲間のいないうちに最強の敵が来ると、そこで詰む
+      final first = enemyForStage(1);
+      final weakest = [...kEnemies]
+        ..sort((a, b) => a.baseHp.compareTo(b.baseHp));
+      expect(first.id, weakest.first.id);
+    });
+
+    test('1周のあいだに全員が出てくる', () {
+      for (final loop in [0, 1, 2]) {
+        final ids = <String>{};
+        for (var pos = 1; pos <= 9; pos++) {
+          ids.add(enemyForStage(loop * 10 + pos).id);
+        }
+        expect(ids.length, kEnemies.length, reason: '${loop + 1}周目に偏りがある');
+      }
+    });
+
+    test('周が変わると並びも変わる', () {
+      final first = [for (var s = 1; s <= 9; s++) enemyForStage(s).id];
+      final second = [for (var s = 11; s <= 19; s++) enemyForStage(s).id];
+      expect(first, isNot(second));
     });
 
     test('接尾辞を使い切っても名前が作られる', () {
+      final enemy = enemyForStage(101);
       final deep = enemyNameForStage(101);
-      expect(deep, startsWith('深夜のラーメン'));
-      expect(deep.length, greaterThan('深夜のラーメン'.length));
+      expect(deep, startsWith(enemy.name));
+      expect(deep.length, greaterThan(enemy.name.length));
     });
   });
 
@@ -107,8 +131,11 @@ void main() {
     });
 
     test('話を読むと増える。クリアしただけでは増えない', () {
-      expect(unlockedOrgans({2}).length, 2);
-      expect(unlockedOrgans({2, 3, 5, 7}).length, kOrgans.length);
+      expect(unlockedOrgans({'main:2'}).length, 2);
+      expect(
+        unlockedOrgans({'main:2', 'main:3', 'main:5', 'main:7'}).length,
+        kOrgans.length,
+      );
     });
 
     test('心臓ひとりでもステージ1に勝てる', () {
@@ -176,7 +203,7 @@ void main() {
       state.clearStage(2);
       expect(state.party.length, 1, reason: 'まだ読んでいない');
 
-      state.markEpisodeRead(2);
+      state.markEpisodeRead('main:2');
 
       expect(state.party.map((o) => o.id), ['heart', 'lung']);
     });
@@ -188,16 +215,19 @@ void main() {
       state.clearStage(1);
       expect(state.hasUnreadStory, isTrue);
 
-      state.markEpisodeRead(1);
+      state.markEpisodeRead('main:1');
       expect(state.hasUnreadStory, isFalse);
     });
 
     test('既読は保存される', () {
       final state = GameState.fresh();
-      state.markEpisodeRead(2);
-      state.markEpisodeRead(3);
+      state.markEpisodeRead('main:2');
+      state.markEpisodeRead('main:3');
 
-      expect(GameState.decode(state.encode()).readEpisodes, {2, 3});
+      expect(GameState.decode(state.encode()).readEpisodes, {
+        'main:2',
+        'main:3',
+      });
     });
 
     test('まだ出会っていない子の健康度は減らない', () {

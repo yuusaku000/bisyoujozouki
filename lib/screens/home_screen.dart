@@ -111,6 +111,7 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (_) => StoryListScreen(
           clearedStage: state.clearedStage,
           readEpisodes: state.readEpisodes,
+          levelOf: state.levelOf,
           onRead: _onEpisodeRead,
         ),
       ),
@@ -121,14 +122,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   /// 読み終えた瞬間に仲間が増える。
-  void _onEpisodeRead(int stage) {
+  void _onEpisodeRead(String key) {
     final state = _state!;
-    if (state.readEpisodes.contains(stage)) return;
-    state.markEpisodeRead(stage);
+    if (state.readEpisodes.contains(key)) return;
+    state.markEpisodeRead(key);
     _persist();
 
     for (final organ in kOrgans) {
-      if (organ.unlockStage == stage && mounted) {
+      if ('main:${organ.unlockStage}' == key && mounted) {
         showTopToast(context, '${organ.name}が仲間になりました', icon: Icons.favorite);
       }
     }

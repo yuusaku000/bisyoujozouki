@@ -49,8 +49,8 @@ class Organ {
   /// 仲間が増えても、その子が誰なのか分からないままになる。
   final int unlockStage;
 
-  bool isUnlocked(Set<int> readEpisodes) =>
-      unlockStage == 0 || readEpisodes.contains(unlockStage);
+  bool isUnlocked(Set<String> readEpisodes) =>
+      unlockStage == 0 || readEpisodes.contains('main:$unlockStage');
 
   String imagePath(Condition condition) =>
       'assets/organs/$id/${id}_${condition.name}.png';

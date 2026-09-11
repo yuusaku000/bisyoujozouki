@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zoukicchi/data/lines.dart';
+import 'package:zoukicchi/data/chara_story.dart';
 import 'package:zoukicchi/data/enemies.dart';
 import 'package:zoukicchi/data/organs.dart';
 import 'package:zoukicchi/data/story.dart';
@@ -89,6 +90,50 @@ void main() {
           reason: '${episode.title} にボスが出てこない',
         );
       }
+    });
+  });
+
+  group('キャラクターストーリー', () {
+    test('全員に話がある', () {
+      for (final organ in kOrgans) {
+        expect(
+          episodesForOrgan(organ.id),
+          isNotEmpty,
+          reason: '${organ.name}の話が無い',
+        );
+      }
+    });
+
+    test('レベルが足りないと読めない', () {
+      int lowLevel(String id) => 1;
+      expect(unlockedCharaEpisodes(lowLevel), isEmpty);
+    });
+
+    test('レベルを上げた子の話だけ読める', () {
+      int onlyHeart(String id) => id == 'heart' ? 5 : 1;
+      final open = unlockedCharaEpisodes(onlyHeart);
+
+      expect(open, isNotEmpty);
+      expect(open.every((e) => e.organId == 'heart'), isTrue);
+    });
+
+    test('話す臓器はその子自身', () {
+      for (final episode in kCharaStory) {
+        for (final line in episode.lines) {
+          if (line.speakerId != null) {
+            expect(
+              line.speakerId,
+              episode.organId,
+              reason: '${episode.title} に他の子が出てくる',
+            );
+          }
+        }
+      }
+    });
+
+    test('鍵が重複しない', () {
+      final keys = kCharaStory.map((e) => e.key).toList();
+      expect(keys.toSet().length, keys.length);
     });
   });
 

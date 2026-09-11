@@ -48,7 +48,8 @@ void main() {
     });
 
     test('自己申告の臓器は達成か未達かの二択', () {
-      final state = GameState.fresh()..readEpisodes.addAll({2, 3, 5, 7});
+      final state = GameState.fresh()
+        ..readEpisodes.addAll({'main:2', 'main:3', 'main:5', 'main:7'});
 
       state.today = const DailyInput(ateWell: true, rested: false);
       final result = state.endDay();
@@ -58,7 +59,8 @@ void main() {
     });
 
     test('臓器ごとに見ている指標が違う', () {
-      final state = GameState.fresh()..readEpisodes.addAll({2, 3, 5, 7});
+      final state = GameState.fresh()
+        ..readEpisodes.addAll({'main:2', 'main:3', 'main:5', 'main:7'});
       // 階段だけ達成。心臓は歩数を見ているので下がる
       state.today = const DailyInput(steps: 0, stairs: DailyInput.stairsGoal);
       final result = state.endDay();

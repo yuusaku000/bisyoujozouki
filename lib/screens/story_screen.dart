@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../data/chara_story.dart';
 import '../data/enemies.dart';
 import '../data/organs.dart';
 import '../data/story.dart';
@@ -250,12 +251,14 @@ class StoryListScreen extends StatefulWidget {
     super.key,
     required this.clearedStage,
     required this.readEpisodes,
+    required this.levelOf,
     this.onRead,
   });
 
   final int clearedStage;
-  final Set<int> readEpisodes;
-  final void Function(int stage)? onRead;
+  final Set<String> readEpisodes;
+  final void Function(String key)? onRead;
+  final int Function(String organId) levelOf;
 
   @override
   State<StoryListScreen> createState() => _StoryListScreenState();
@@ -263,7 +266,7 @@ class StoryListScreen extends StatefulWidget {
 
 class _StoryListScreenState extends State<StoryListScreen> {
   int get clearedStage => widget.clearedStage;
-  Set<int> get readEpisodes => widget.readEpisodes;
+  Set<String> get readEpisodes => widget.readEpisodes;
 
   /// 読み終えて戻ってきたら、しるしを消すために組み直す。
   Future<void> _open(StoryEpisode episode) async {
@@ -272,7 +275,7 @@ class _StoryListScreenState extends State<StoryListScreen> {
       MaterialPageRoute(
         builder: (_) => StoryScreen(
           episode: episode,
-          onRead: () => widget.onRead?.call(episode.stage),
+          onRead: () => widget.onRead?.call(episode.key),
         ),
       ),
     );
@@ -291,26 +294,129 @@ class _StoryListScreenState extends State<StoryListScreen> {
         ),
         backgroundColor: AppColors.background,
       ),
-      body: ListView.separated(
+      body: ListView(
         padding: const EdgeInsets.all(16),
-        itemCount: kStory.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 10),
-        itemBuilder: (context, i) {
-          final episode = kStory[i];
-          final open = unlocked.contains(episode);
-          final unread = open && !readEpisodes.contains(episode.stage);
-          return Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Opacity(
-                opacity: open ? 1 : 0.45,
-                child: _card(context, episode, open),
+        children: [
+          const Center(child: OrnateLabel('本編')),
+          const SizedBox(height: 14),
+          for (final episode in kStory) ...[
+            _row(
+              open: unlocked.contains(episode),
+              unread:
+                  unlocked.contains(episode) &&
+                  !readEpisodes.contains(episode.key),
+              child: _card(context, episode, unlocked.contains(episode)),
+            ),
+            const SizedBox(height: 10),
+          ],
+          const SizedBox(height: 18),
+          const Center(child: OrnateLabel('あの子のはなし')),
+          const SizedBox(height: 6),
+          const Center(
+            child: Text(
+              'レベルを上げると読めるようになります',
+              style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+            ),
+          ),
+          const SizedBox(height: 14),
+          for (final organ in kOrgans)
+            for (final episode in episodesForOrgan(organ.id)) ...[
+              _row(
+                open: widget.levelOf(organ.id) >= episode.requiredLevel,
+                unread:
+                    widget.levelOf(organ.id) >= episode.requiredLevel &&
+                    !readEpisodes.contains(episode.key),
+                child: _charaCard(context, organ, episode),
               ),
-              if (unread)
-                const Positioned(top: -4, right: -4, child: UnreadDot()),
+              const SizedBox(height: 10),
             ],
-          );
-        },
+        ],
+      ),
+    );
+  }
+
+  Widget _row({
+    required bool open,
+    required bool unread,
+    required Widget child,
+  }) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Opacity(opacity: open ? 1 : 0.45, child: child),
+        if (unread) const Positioned(top: -4, right: -4, child: UnreadDot()),
+      ],
+    );
+  }
+
+  Future<void> _openChara(CharaEpisode episode) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => StoryScreen(
+          episode: StoryEpisode(
+            stage: 0,
+            title: episode.title,
+            lines: episode.lines,
+          ),
+          onRead: () => widget.onRead?.call(episode.key),
+        ),
+      ),
+    );
+    if (mounted) setState(() {});
+  }
+
+  Widget _charaCard(BuildContext context, Organ organ, CharaEpisode episode) {
+    final open = widget.levelOf(organ.id) >= episode.requiredLevel;
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: open ? () => _openChara(episode) : null,
+        child: OrnatePanel(
+          padding: const EdgeInsets.all(14),
+          borderColor: open ? organ.accent : AppColors.goldDim,
+          child: Row(
+            children: [
+              ClipOval(
+                child: Image.asset(
+                  organ.facePath(Condition.genki),
+                  width: 34,
+                  height: 34,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      open ? episode.title : '？？？',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      open
+                          ? organ.name
+                          : '${organ.name}　Lv.${episode.requiredLevel} で解放',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: open ? organ.accent : AppColors.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (!open)
+                const Icon(Icons.lock, size: 16, color: AppColors.textMuted),
+            ],
+          ),
+        ),
       ),
     );
   }

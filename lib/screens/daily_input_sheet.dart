@@ -20,7 +20,7 @@ class DailyInputSheet extends StatefulWidget {
   final int stepGoal;
 
   /// まだ出会っていない臓器の項目は出さない。
-  final Set<int> readEpisodes;
+  final Set<String> readEpisodes;
 
   @override
   State<DailyInputSheet> createState() => _DailyInputSheetState();

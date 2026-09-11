@@ -20,6 +20,9 @@ class StoryLine {
   final String? enemyId;
 }
 
+/// 表情の別名。キャラストーリー側から Condition を直接触らせないため。
+typedef StoryFace = Condition;
+
 class StoryEpisode {
   const StoryEpisode({
     required this.stage,
@@ -31,6 +34,8 @@ class StoryEpisode {
   final int stage;
   final String title;
   final List<StoryLine> lines;
+
+  String get key => 'main:$stage';
 }
 
 const _genki = Condition.genki;

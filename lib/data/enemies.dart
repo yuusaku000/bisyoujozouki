@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import '../models/enemy.dart';
 
 const List<Enemy> kEnemies = [
@@ -54,14 +56,23 @@ const Enemy kBoss = Enemy(
   isBoss: true,
 );
 
-/// 10ステージごとにボス。それ以外は通常の敵が順に出る。
+/// 10ステージごとにボス。それ以外は周ごとに並びが変わる。
 ///
-/// 周回内の位置で選ぶ。通し番号で選ぶとボスの分だけ並びがずれて、
-/// 2周目の1戦目が別の敵になってしまう。
+/// 挑むたびに引き直せると、弱い敵が出るまで粘れてしまうので、ステージ番号から
+/// 決める。ただし完全な無作為にすると一周のうち同じ敵ばかり出たり、1戦目に
+/// 最強の相手が来たりする。周ごとに全員を並べ替える形にして、偏りを防ぐ。
 Enemy enemyForStage(int stage) {
   if (stage % 10 == 0) return kBoss;
-  final inLoop = (stage - 1) % 10;
-  return kEnemies[inLoop % kEnemies.length];
+  final loop = (stage - 1) ~/ 10;
+  final pos = (stage - 1) % 10;
+  final order = _orderForLoop(loop);
+  return order[pos % order.length];
+}
+
+List<Enemy> _orderForLoop(int loop) {
+  // 1周目は定義順。はじめての相手が最強では、仲間のいない人が詰む。
+  if (loop == 0) return kEnemies;
+  return [...kEnemies]..shuffle(Random(loop * 7919));
 }
 
 /// 進むほど強くなる。10ステージで約2倍。

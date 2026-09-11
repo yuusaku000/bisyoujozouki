@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import '../data/organs.dart';
+import '../data/chara_story.dart';
 import '../data/story.dart';
 import 'daily_input.dart';
 import 'organ.dart';
@@ -44,7 +45,7 @@ class GameState {
     dayCount: 1,
     today: const DailyInput(),
     clearedStage: 0,
-    readEpisodes: <int>{},
+    readEpisodes: <String>{},
   );
 
   int coins;
@@ -56,19 +57,25 @@ class GameState {
   DailyInput today;
   int clearedStage;
 
-  /// 読み終えた話の番号。仲間が増えるのはクリアではなく、これを満たしたとき。
-  Set<int> readEpisodes;
+  /// 読み終えた話の鍵。'main:3' や 'chara:heart:5' の形で持つ。
+  /// 仲間が増えるのはクリアではなく、これを満たしたとき。
+  Set<String> readEpisodes;
 
   int get currentStage => clearedStage + 1;
 
   List<Organ> get party => unlockedOrgans(readEpisodes);
 
-  void markEpisodeRead(int stage) => readEpisodes.add(stage);
+  void markEpisodeRead(String key) => readEpisodes.add(key);
 
   /// 解放済みで、まだ読んでいない話があるか。
-  bool get hasUnreadStory => unlockedEpisodes(
-    clearedStage,
-  ).any((e) => !readEpisodes.contains(e.stage));
+  int levelOf(String organId) => statusOf(organId).level;
+
+  /// 本編とキャラ編のどちらかに未読があるか。
+  bool get hasUnreadStory =>
+      unlockedEpisodes(
+        clearedStage,
+      ).any((e) => !readEpisodes.contains(e.key)) ||
+      unlockedCharaEpisodes(levelOf).any((e) => !readEpisodes.contains(e.key));
 
   /// バトルに勝ってもコインは出さない。
   ///
@@ -182,8 +189,9 @@ class GameState {
         (map['today'] as Map<String, dynamic>?) ?? const {},
       ),
       clearedStage: map['clearedStage'] as int? ?? 0,
+      // 以前は話の番号だけを数で持っていた。古いセーブを読めるようにする。
       readEpisodes: ((map['readEpisodes'] as List<dynamic>?) ?? const [])
-          .map((e) => e as int)
+          .map((e) => e is int ? 'main:$e' : e as String)
           .toSet(),
     );
   }
