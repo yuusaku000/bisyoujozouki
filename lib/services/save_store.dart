@@ -11,7 +11,8 @@ class SaveStore {
     if (source == null) return GameState.fresh();
     try {
       return GameState.decode(source);
-    } on FormatException {
+    } catch (_) {
+      // 壊れたセーブで起動不能になるくらいなら、最初から始めたほうがまし。
       return GameState.fresh();
     }
   }
