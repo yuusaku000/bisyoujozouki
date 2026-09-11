@@ -58,6 +58,7 @@ class GameState {
     required this.tickets,
     required this.missionIds,
     required this.inventory,
+    required this.pullsSinceSsr,
     this.battleSpeed = BattleSpeed.normal,
   });
 
@@ -75,6 +76,7 @@ class GameState {
     tickets: 0,
     missionIds: <String>[],
     inventory: <String, int>{},
+    pullsSinceSsr: 0,
   );
 
   int coins;
@@ -104,6 +106,11 @@ class GameState {
   /// 持っているプレゼント。id と個数。
   Map<String, int> inventory;
 
+  /// 天井までの数え。SSRが出るたびに0に戻る。
+  int pullsSinceSsr;
+
+  int get pullsToPity => (kPityPulls - pullsSinceSsr).clamp(0, kPityPulls);
+
   final Random _random = Random();
 
   int countOf(String presentId) => inventory[presentId] ?? 0;
@@ -120,6 +127,20 @@ class GameState {
     if (tickets < cost) return const [];
     tickets -= cost;
     final results = ten ? rollTen(_random) : [rollOne(_random)];
+
+    // 天井。引いた回数が報われないままにしない。
+    for (var i = 0; i < results.length; i++) {
+      if (results[i].rarity == Rarity.ssr) {
+        pullsSinceSsr = 0;
+        continue;
+      }
+      pullsSinceSsr++;
+      if (pullsSinceSsr >= kPityPulls) {
+        results[i] = forceSsr(_random);
+        pullsSinceSsr = 0;
+      }
+    }
+
     for (final p in results) {
       inventory[p.id] = countOf(p.id) + 1;
     }
@@ -288,6 +309,7 @@ class GameState {
     'missionIds': missionIds,
     'battleSpeed': battleSpeed.name,
     'inventory': inventory,
+    'pullsSinceSsr': pullsSinceSsr,
   });
 
   factory GameState.decode(String source) {
@@ -322,6 +344,7 @@ class GameState {
         (s) => s.name == map['battleSpeed'],
         orElse: () => BattleSpeed.normal,
       ),
+      pullsSinceSsr: map['pullsSinceSsr'] as int? ?? 0,
       inventory: ((map['inventory'] as Map<String, dynamic>?) ?? const {}).map(
         (k, v) => MapEntry(k, v as int),
       ),

@@ -7,6 +7,7 @@ import '../models/organ.dart';
 import '../widgets/coin_text.dart';
 import '../widgets/health_bar.dart';
 import '../widgets/ornate.dart';
+import 'heart_up.dart';
 import 'present_sheet.dart';
 
 /// 一人ずつ、全身で向き合う場所。一覧に詰め込むと誰の顔も見えない。
@@ -61,6 +62,7 @@ class _GrowTabState extends State<GrowTab> {
   }
 
   Future<void> _openPresents(Organ organ) async {
+    final before = state.statusOf(organ.id).hearts;
     final given = await showModalBottomSheet<GiftResult>(
       context: context,
       isScrollControlled: true,
@@ -69,6 +71,26 @@ class _GrowTabState extends State<GrowTab> {
     );
     if (given == null || !mounted) return;
     widget.onChanged();
+
+    final after = state.statusOf(organ.id).hearts;
+    if (after > before) {
+      await Navigator.push(
+        context,
+        PageRouteBuilder<void>(
+          opaque: false,
+          barrierColor: Colors.black54,
+          transitionDuration: const Duration(milliseconds: 260),
+          pageBuilder: (_, _, _) => HeartUpOverlay(
+            organ: organ,
+            hearts: after,
+            line: heartUpLine(organ.id, after),
+          ),
+        ),
+      );
+      if (mounted) setState(() {});
+      return;
+    }
+
     _say(
       giftLine(
         organ.id,

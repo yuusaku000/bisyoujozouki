@@ -148,11 +148,17 @@ List<Present> presentsOf(Rarity rarity) =>
 
 /// 排出率。ここを触るだけで手触りが変わるので、1か所にまとめてある。
 const Map<Rarity, int> kGachaWeights = {
-  Rarity.n: 55,
-  Rarity.r: 33,
-  Rarity.sr: 10,
-  Rarity.ssr: 2,
+  Rarity.n: 48,
+  Rarity.r: 36,
+  Rarity.sr: 12,
+  Rarity.ssr: 4,
 };
+
+/// 天井。この回数まで引けば必ずSSRが出る。
+///
+/// 4%だと10連1回で出ない確率が7割近い。運が悪いだけで永久に出ないのは、
+/// 引いた回数が報われないということなので、上限を決めておく。
+const int kPityPulls = 40;
 
 const int kGachaCost = 1;
 const int kGachaTenCost = 10;
@@ -166,6 +172,8 @@ List<Present> rollTen(Random random) {
   }
   return results;
 }
+
+Present forceSsr(Random random) => _pickFrom(Rarity.ssr, random);
 
 Present rollOne(Random random) => _pickFrom(_rollRarity(random), random);
 
