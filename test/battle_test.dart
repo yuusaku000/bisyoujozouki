@@ -2,22 +2,24 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zoukicchi/data/enemies.dart';
 import 'package:zoukicchi/data/organs.dart';
 import 'package:zoukicchi/models/battle.dart';
+import 'package:zoukicchi/models/daily_input.dart';
 import 'package:zoukicchi/models/game_state.dart';
 import 'package:zoukicchi/models/organ.dart';
 
-Map<String, OrganStatus> party({int health = 50, int level = 1}) =>
-    {for (final o in kOrgans) o.id: OrganStatus(health: health, level: level)};
+Map<String, OrganStatus> party({int health = 50, int level = 1}) => {
+  for (final o in kOrgans) o.id: OrganStatus(health: health, level: level),
+};
 
 void main() {
   group('自動戦闘', () {
     test('初期状態でステージ1に勝てる', () {
-      final result = Battle(organs: party(), stage: 1, clearedStage: 99).run();
+      final result = Battle(organs: party(), stage: 1, party: kOrgans).run();
       expect(result.won, isTrue, reason: '始めたばかりの人が1戦目で詰むと続かない');
     });
 
     test('同じ状態なら結果は必ず同じ', () {
-      final a = Battle(organs: party(), stage: 3, clearedStage: 99).run();
-      final b = Battle(organs: party(), stage: 3, clearedStage: 99).run();
+      final a = Battle(organs: party(), stage: 3, party: kOrgans).run();
+      final b = Battle(organs: party(), stage: 3, party: kOrgans).run();
 
       expect(a.won, b.won);
       expect(a.turns, b.turns);
@@ -25,28 +27,51 @@ void main() {
     });
 
     test('健康なほうが強い', () {
-      final healthy = Battle(organs: party(health: 100), stage: 5, clearedStage: 99).run();
-      final weak = Battle(organs: party(health: 20), stage: 5, clearedStage: 99).run();
+      final healthy = Battle(
+        organs: party(health: 100),
+        stage: 5,
+        party: kOrgans,
+      ).run();
+      final weak = Battle(
+        organs: party(health: 20),
+        stage: 5,
+        party: kOrgans,
+      ).run();
 
-      expect(healthy.turns, lessThan(weak.turns),
-          reason: '運動した分だけ早く倒せる');
+      expect(healthy.turns, lessThan(weak.turns), reason: '運動した分だけ早く倒せる');
     });
 
     test('サボり続けると勝てなくなる', () {
-      final neglected = Battle(organs: party(health: 20), stage: 12, clearedStage: 99).run();
+      final neglected = Battle(
+        organs: party(health: 20),
+        stage: 12,
+        party: kOrgans,
+      ).run();
       expect(neglected.won, isFalse);
     });
 
     test('レベルを上げれば同じ健康度でも早く倒せる', () {
       const stage = 14;
-      final low = Battle(organs: party(health: 60), stage: stage, clearedStage: 99).run();
-      final high = Battle(organs: party(health: 60, level: 10), stage: stage, clearedStage: 99).run();
+      final low = Battle(
+        organs: party(health: 60),
+        stage: stage,
+        party: kOrgans,
+      ).run();
+      final high = Battle(
+        organs: party(health: 60, level: 10),
+        stage: stage,
+        party: kOrgans,
+      ).run();
 
       expect(high.turns, lessThan(low.turns));
     });
 
     test('必ず決着するか、上限ターンで打ち切られる', () {
-      final result = Battle(organs: party(health: 20), stage: 40, clearedStage: 99).run();
+      final result = Battle(
+        organs: party(health: 20),
+        stage: 40,
+        party: kOrgans,
+      ).run();
       expect(result.turns, lessThanOrEqualTo(Battle.maxTurns));
     });
   });
@@ -78,24 +103,31 @@ void main() {
 
   group('仲間の解放', () {
     test('はじめは心臓だけ', () {
-      final solo = unlockedOrgans(0);
-      expect(solo.map((o) => o.id), ['heart']);
+      expect(unlockedOrgans({}).map((o) => o.id), ['heart']);
     });
 
-    test('物語が進むと増える', () {
-      expect(unlockedOrgans(2).length, 2);
-      expect(unlockedOrgans(7).length, kOrgans.length);
+    test('話を読むと増える。クリアしただけでは増えない', () {
+      expect(unlockedOrgans({2}).length, 2);
+      expect(unlockedOrgans({2, 3, 5, 7}).length, kOrgans.length);
     });
 
     test('心臓ひとりでもステージ1に勝てる', () {
       // 仲間がいないうちに詰むと、そこで終わってしまう
-      final result = Battle(organs: party(), stage: 1, clearedStage: 0).run();
+      final result = Battle(
+        organs: party(),
+        stage: 1,
+        party: [organById('heart')],
+      ).run();
       expect(result.won, isTrue);
     });
 
     test('仲間が多いほど戦力が上がる', () {
-      final solo = Battle(organs: party(), stage: 1, clearedStage: 0);
-      final full = Battle(organs: party(), stage: 1, clearedStage: 99);
+      final solo = Battle(
+        organs: party(),
+        stage: 1,
+        party: [organById('heart')],
+      );
+      final full = Battle(organs: party(), stage: 1, party: kOrgans);
 
       expect(full.partyMaxHp, greaterThan(solo.partyMaxHp));
     });
@@ -125,8 +157,7 @@ void main() {
 
       state.clearStage(1);
 
-      expect(state.coins, before,
-          reason: 'コインの源は歩数だけ。バトルから配ると歩かずに強くなれてしまう');
+      expect(state.coins, before, reason: 'コインの源は歩数だけ。バトルから配ると歩かずに強くなれてしまう');
     });
 
     test('進行状況は保存される', () {
@@ -136,5 +167,56 @@ void main() {
 
       expect(GameState.decode(state.encode()).clearedStage, 2);
     });
+  });
+
+  group('既読', () {
+    test('クリアしただけでは仲間は増えない。読んではじめて増える', () {
+      final state = GameState.fresh();
+      state.clearStage(1);
+      state.clearStage(2);
+      expect(state.party.length, 1, reason: 'まだ読んでいない');
+
+      state.markEpisodeRead(2);
+
+      expect(state.party.map((o) => o.id), ['heart', 'lung']);
+    });
+
+    test('解放済みで未読があるとしるしが立つ', () {
+      final state = GameState.fresh();
+      expect(state.hasUnreadStory, isFalse);
+
+      state.clearStage(1);
+      expect(state.hasUnreadStory, isTrue);
+
+      state.markEpisodeRead(1);
+      expect(state.hasUnreadStory, isFalse);
+    });
+
+    test('既読は保存される', () {
+      final state = GameState.fresh();
+      state.markEpisodeRead(2);
+      state.markEpisodeRead(3);
+
+      expect(GameState.decode(state.encode()).readEpisodes, {2, 3});
+    });
+
+    test('まだ出会っていない子の健康度は減らない', () {
+      // 初対面のときにもう弱りきっているのはおかしい
+      final state = GameState.fresh();
+      for (var i = 0; i < 10; i++) {
+        state.today = const DailyInput();
+        state.endDay();
+      }
+
+      expect(state.statusOf('brain').health, OrganStatus.initialHealth);
+      expect(
+        state.statusOf('heart').health,
+        lessThan(OrganStatus.initialHealth),
+      );
+    });
+  });
+
+  test('はじめの健康度は80', () {
+    expect(GameState.fresh().statusOf('heart').health, 80);
   });
 }

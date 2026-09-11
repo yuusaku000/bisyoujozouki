@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../data/enemies.dart';
-import '../data/organs.dart';
 import '../data/theme.dart';
 import '../models/battle.dart';
 import '../models/game_state.dart';
@@ -25,7 +24,7 @@ class _BattleScreenState extends State<BattleScreen> {
   late final BattleResult _result = Battle(
     organs: widget.state.organs,
     stage: _stage,
-    clearedStage: widget.state.clearedStage,
+    party: widget.state.party,
   ).run();
 
   final _scroll = ScrollController();
@@ -220,7 +219,7 @@ class _BattleScreenState extends State<BattleScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          for (final organ in unlockedOrgans(widget.state.clearedStage))
+          for (final organ in widget.state.party)
             Builder(
               builder: (context) {
                 final condition =

@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 
 import '../data/organs.dart';
 import '../data/theme.dart';
-import '../data/organs.dart';
 import '../models/daily_input.dart';
 import '../widgets/coin_text.dart';
 import '../widgets/ornate.dart';
@@ -14,14 +13,14 @@ class DailyInputSheet extends StatefulWidget {
     super.key,
     required this.initial,
     required this.stepGoal,
-    required this.clearedStage,
+    required this.readEpisodes,
   });
 
   final DailyInput initial;
   final int stepGoal;
 
   /// まだ出会っていない臓器の項目は出さない。
-  final int clearedStage;
+  final Set<int> readEpisodes;
 
   @override
   State<DailyInputSheet> createState() => _DailyInputSheetState();
@@ -44,7 +43,7 @@ class _DailyInputSheetState extends State<DailyInputSheet> {
   }
 
   bool _has(String organId) =>
-      organById(organId).isUnlocked(widget.clearedStage);
+      organById(organId).isUnlocked(widget.readEpisodes);
 
   @override
   Widget build(BuildContext context) {

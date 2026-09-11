@@ -44,11 +44,13 @@ class Organ {
   final String role;
   final Color accent;
 
-  /// このステージをクリアすると仲間になる。0なら最初からいる。
-  /// 物語で出会った順に増えていく。
+  /// この番号の話を読むと仲間になる。0なら最初からいる。
+  /// クリアではなく「読んだか」で決まる。出会う場面を飛ばして
+  /// 仲間が増えても、その子が誰なのか分からないままになる。
   final int unlockStage;
 
-  bool isUnlocked(int clearedStage) => clearedStage >= unlockStage;
+  bool isUnlocked(Set<int> readEpisodes) =>
+      unlockStage == 0 || readEpisodes.contains(unlockStage);
 
   String imagePath(Condition condition) =>
       'assets/organs/$id/${id}_${condition.name}.png';
@@ -65,7 +67,7 @@ class OrganStatus {
   final int health;
   final int level;
 
-  static const int initialHealth = 50;
+  static const int initialHealth = 80;
   static const int minHealth = 20;
   static const int maxHealth = 100;
 

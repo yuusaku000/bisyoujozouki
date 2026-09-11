@@ -48,7 +48,7 @@ void main() {
     });
 
     test('自己申告の臓器は達成か未達かの二択', () {
-      final state = GameState.fresh();
+      final state = GameState.fresh()..readEpisodes.addAll({2, 3, 5, 7});
 
       state.today = const DailyInput(ateWell: true, rested: false);
       final result = state.endDay();
@@ -58,7 +58,7 @@ void main() {
     });
 
     test('臓器ごとに見ている指標が違う', () {
-      final state = GameState.fresh();
+      final state = GameState.fresh()..readEpisodes.addAll({2, 3, 5, 7});
       // 階段だけ達成。心臓は歩数を見ているので下がる
       state.today = const DailyInput(steps: 0, stairs: DailyInput.stairsGoal);
       final result = state.endDay();
@@ -76,8 +76,10 @@ void main() {
 
     test('人間にありえない歩数は上限で止める', () {
       // 手入力なので青天井にすると経済が壊れる
-      final absurd =
-          const DailyInput().copyWith(steps: 999999999, stairs: 99999);
+      final absurd = const DailyInput().copyWith(
+        steps: 999999999,
+        stairs: 99999,
+      );
 
       expect(absurd.steps, DailyInput.maxSteps);
       expect(absurd.stairs, DailyInput.maxStairs);
@@ -104,8 +106,7 @@ void main() {
       final state = GameState.fresh();
       walkGoodDays(state, GameState.daysToRaiseGoal);
 
-      expect(state.stepGoal,
-          GameState.initialStepGoal + GameState.goalStepUp);
+      expect(state.stepGoal, GameState.initialStepGoal + GameState.goalStepUp);
     });
 
     test('3日続けて未達だと目標が下がる', () {

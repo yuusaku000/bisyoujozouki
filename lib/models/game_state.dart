@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import '../data/organs.dart';
+import '../data/story.dart';
 import 'daily_input.dart';
 import 'organ.dart';
 
@@ -31,6 +32,7 @@ class GameState {
     required this.dayCount,
     required this.today,
     required this.clearedStage,
+    required this.readEpisodes,
   });
 
   factory GameState.fresh() => GameState(
@@ -42,6 +44,7 @@ class GameState {
     dayCount: 1,
     today: const DailyInput(),
     clearedStage: 0,
+    readEpisodes: <int>{},
   );
 
   int coins;
@@ -53,7 +56,19 @@ class GameState {
   DailyInput today;
   int clearedStage;
 
+  /// 読み終えた話の番号。仲間が増えるのはクリアではなく、これを満たしたとき。
+  Set<int> readEpisodes;
+
   int get currentStage => clearedStage + 1;
+
+  List<Organ> get party => unlockedOrgans(readEpisodes);
+
+  void markEpisodeRead(int stage) => readEpisodes.add(stage);
+
+  /// 解放済みで、まだ読んでいない話があるか。
+  bool get hasUnreadStory => unlockedEpisodes(
+    clearedStage,
+  ).any((e) => !readEpisodes.contains(e.stage));
 
   /// バトルに勝ってもコインは出さない。
   ///
@@ -84,7 +99,9 @@ class GameState {
   /// 1日を締める。入力からコインと健康度を確定し、翌日に進む。
   DayResult endDay() {
     final deltas = <String, int>{};
-    for (final organ in kOrgans) {
+    // まだ出会っていない子は数えない。放っておくと、初対面のときに
+    // もう弱りきっている。
+    for (final organ in party) {
       final delta = HealthRule.deltaFor(
         organ: organ,
         input: today,
@@ -143,6 +160,7 @@ class GameState {
     'dayCount': dayCount,
     'today': today.toJson(),
     'clearedStage': clearedStage,
+    'readEpisodes': readEpisodes.toList(),
   });
 
   factory GameState.decode(String source) {
@@ -164,6 +182,9 @@ class GameState {
         (map['today'] as Map<String, dynamic>?) ?? const {},
       ),
       clearedStage: map['clearedStage'] as int? ?? 0,
+      readEpisodes: ((map['readEpisodes'] as List<dynamic>?) ?? const [])
+          .map((e) => e as int)
+          .toSet(),
     );
   }
 }

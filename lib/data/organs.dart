@@ -52,5 +52,5 @@ const List<Organ> kOrgans = [
 Organ organById(String id) => kOrgans.firstWhere((o) => o.id == id);
 
 /// 物語で出会った子だけが並ぶ。まだの子は鍵がかかっている。
-List<Organ> unlockedOrgans(int clearedStage) =>
-    kOrgans.where((o) => o.isUnlocked(clearedStage)).toList();
+List<Organ> unlockedOrgans(Set<int> readEpisodes) =>
+    kOrgans.where((o) => o.isUnlocked(readEpisodes)).toList();

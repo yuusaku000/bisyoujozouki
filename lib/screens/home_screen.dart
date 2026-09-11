@@ -64,7 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (_) => DailyInputSheet(
         initial: state.today,
         stepGoal: state.stepGoal,
-        clearedStage: state.clearedStage,
+        readEpisodes: state.readEpisodes,
       ),
     );
     if (input == null || !mounted) return;
@@ -80,7 +80,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _goToBattle() async {
     final state = _state!;
     final stage = state.currentStage;
-    final clearedBefore = state.clearedStage;
     await Navigator.push<bool>(
       context,
       MaterialPageRoute(builder: (_) => BattleScreen(state: state)),
@@ -90,7 +89,6 @@ class _HomeScreenState extends State<HomeScreen> {
     await _persist();
 
     // 読みたくなったときに読めればいい。勝った直後に読書を強制しない。
-    _announceOrgans(clearedBefore, state.clearedStage);
     final episode = episodeForStage(stage);
     if (episode != null && state.clearedStage >= stage && mounted) {
       _announceEpisode(episode);
@@ -105,21 +103,35 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _announceOrgans(int before, int after) {
+  Future<void> _openStoryList() async {
+    final state = _state!;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => StoryListScreen(
+          clearedStage: state.clearedStage,
+          readEpisodes: state.readEpisodes,
+          onRead: _onEpisodeRead,
+        ),
+      ),
+    );
+    if (!mounted) return;
+    setState(() {});
+    await _persist();
+  }
+
+  /// 読み終えた瞬間に仲間が増える。
+  void _onEpisodeRead(int stage) {
+    final state = _state!;
+    if (state.readEpisodes.contains(stage)) return;
+    state.markEpisodeRead(stage);
+    _persist();
+
     for (final organ in kOrgans) {
-      if (organ.unlockStage > before && organ.unlockStage <= after) {
+      if (organ.unlockStage == stage && mounted) {
         showTopToast(context, '${organ.name}が仲間になりました', icon: Icons.favorite);
       }
     }
-  }
-
-  void _openStoryList() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => StoryListScreen(clearedStage: _state!.clearedStage),
-      ),
-    );
   }
 
   Future<void> _showDayResult(DayResult result) {
@@ -159,7 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
                 const SizedBox(height: 14),
-                for (final organ in unlockedOrgans(_state!.clearedStage))
+                for (final organ in _state!.party)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     child: Row(
@@ -295,7 +307,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _topBar(GameState state) {
-    final unread = unlockedEpisodes(state.clearedStage).length;
+    final hasUnread = state.hasUnreadStory;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
       child: Row(
@@ -350,14 +362,14 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(width: 8),
-          _storyButton(unread),
+          _storyButton(hasUnread),
         ],
       ),
     );
   }
 
   /// アイコンだけだと何のボタンか分からないので、文字を添える。
-  Widget _storyButton(int unlocked) {
+  Widget _storyButton(bool hasUnread) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -383,24 +395,20 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: Colors.white,
                 ),
               ),
-              if (unlocked > 0) ...[
-                const SizedBox(width: 6),
+              if (hasUnread) ...[
+                const SizedBox(width: 7),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 1,
-                  ),
+                  width: 9,
+                  height: 9,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.28),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    '$unlocked',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                    ),
+                    color: const Color(0xFFFF3B4E),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFFF3B4E).withValues(alpha: 0.8),
+                        blurRadius: 7,
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -485,7 +493,7 @@ class _HomeScreenState extends State<HomeScreen> {
         itemBuilder: (context, i) {
           final organ = kOrgans[i];
           final selected = i == _selected;
-          final unlocked = organ.isUnlocked(state.clearedStage);
+          final unlocked = organ.isUnlocked(state.readEpisodes);
           final condition = state.statusOf(organ.id).condition;
           return GestureDetector(
             onTap: unlocked

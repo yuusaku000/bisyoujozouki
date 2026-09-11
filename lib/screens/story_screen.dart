@@ -8,9 +8,12 @@ import '../widgets/ornate.dart';
 
 /// 1話を読む画面。タップで1行ずつ進む。
 class StoryScreen extends StatefulWidget {
-  const StoryScreen({super.key, required this.episode});
+  const StoryScreen({super.key, required this.episode, this.onRead});
 
   final StoryEpisode episode;
+
+  /// 最後まで読んだときに呼ばれる。仲間が増えるのはこの瞬間。
+  final VoidCallback? onRead;
 
   @override
   State<StoryScreen> createState() => _StoryScreenState();
@@ -18,8 +21,21 @@ class StoryScreen extends StatefulWidget {
 
 class _StoryScreenState extends State<StoryScreen> {
   int _index = 0;
+  bool _notified = false;
 
   bool get _isLast => _index >= widget.episode.lines.length - 1;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_isLast) _markRead();
+  }
+
+  void _markRead() {
+    if (_notified) return;
+    _notified = true;
+    widget.onRead?.call();
+  }
 
   void _advance() {
     if (_isLast) {
@@ -27,6 +43,7 @@ class _StoryScreenState extends State<StoryScreen> {
       return;
     }
     setState(() => _index++);
+    if (_isLast) _markRead();
   }
 
   @override
@@ -188,9 +205,16 @@ class _StoryScreenState extends State<StoryScreen> {
 
 /// 解放済みの話の一覧。
 class StoryListScreen extends StatelessWidget {
-  const StoryListScreen({super.key, required this.clearedStage});
+  const StoryListScreen({
+    super.key,
+    required this.clearedStage,
+    required this.readEpisodes,
+    this.onRead,
+  });
 
   final int clearedStage;
+  final Set<int> readEpisodes;
+  final void Function(int stage)? onRead;
 
   @override
   Widget build(BuildContext context) {
@@ -222,7 +246,10 @@ class StoryListScreen extends StatelessWidget {
                     ? () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => StoryScreen(episode: episode),
+                          builder: (_) => StoryScreen(
+                            episode: episode,
+                            onRead: () => onRead?.call(episode.stage),
+                          ),
                         ),
                       )
                     : null,
@@ -236,6 +263,17 @@ class StoryListScreen extends StatelessWidget {
                         size: 18,
                         color: open ? AppColors.rose : AppColors.textMuted,
                       ),
+                      if (open && !readEpisodes.contains(episode.stage)) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          width: 9,
+                          height: 9,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFFF4D5E),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ],
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(

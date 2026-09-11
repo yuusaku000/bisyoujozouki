@@ -12,8 +12,11 @@ void main() {
       for (final organ in kOrgans) {
         for (final condition in Condition.values) {
           final lines = kOrganLines[organ.id]?[condition];
-          expect(lines, isNotNull,
-              reason: '${organ.name}の${condition.label}のセリフが無い');
+          expect(
+            lines,
+            isNotNull,
+            reason: '${organ.name}の${condition.label}のセリフが無い',
+          );
           expect(lines, isNotEmpty);
         }
       }
@@ -28,8 +31,10 @@ void main() {
     });
 
     test('同じ日に開き直しても同じセリフ', () {
-      expect(lineFor('heart', Condition.genki, 7),
-          lineFor('heart', Condition.genki, 7));
+      expect(
+        lineFor('heart', Condition.genki, 7),
+        lineFor('heart', Condition.genki, 7),
+      );
     });
   });
 
@@ -45,8 +50,11 @@ void main() {
       for (final episode in kStory) {
         for (final line in episode.lines) {
           if (line.speakerId != null) {
-            expect(ids, contains(line.speakerId),
-                reason: '${episode.title} に知らない話者がいる');
+            expect(
+              ids,
+              contains(line.speakerId),
+              reason: '${episode.title} に知らない話者がいる',
+            );
           }
         }
       }

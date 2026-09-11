@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import '../data/enemies.dart';
-import '../data/organs.dart';
 import 'enemy.dart';
 import 'organ.dart';
 
@@ -48,19 +47,13 @@ class BattleResult {
 /// 勝てないときに「運が悪かった」で片付けられると、運動して強くなるという
 /// 動機が働かない。負けたら素直に力不足だと分かるほうがよい。
 class Battle {
-  Battle({
-    required this.organs,
-    required this.stage,
-    required this.clearedStage,
-  });
+  Battle({required this.organs, required this.stage, required this.party});
 
   final Map<String, OrganStatus> organs;
   final int stage;
 
-  /// まだ出会っていない臓器は戦えない。
-  final int clearedStage;
-
-  List<Organ> get party => unlockedOrgans(clearedStage);
+  /// 戦える顔ぶれ。まだ出会っていない子は入らない。
+  final List<Organ> party;
 
   static const int maxTurns = 30;
   static const double partyHpFactor = 4.0;
