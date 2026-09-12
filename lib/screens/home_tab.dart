@@ -13,6 +13,7 @@ import '../widgets/ornate.dart';
 import '../data/achievements.dart';
 import '../models/vitals.dart';
 import 'achievements_screen.dart';
+import '../widgets/progress_ring.dart';
 import '../widgets/today_clock.dart';
 import 'vitals_screen.dart';
 import 'tutorial.dart';
@@ -108,23 +109,37 @@ class _HomeTabState extends State<HomeTab> {
     }
   }
 
-  /// 受け取れる達成があるときだけ印をつける。押す理由が分かるように。
+  /// 杯のしるし。輪の埋まり具合で、何かが貯まる場所だと分かるようにする。
+  ///
+  /// 小さな線画だけだと設定や情報のアイコンに紛れて、押す気にならない。
   Widget _trophyButton() {
+    final done = kAchievements.where((a) => a.isDone(state)).length;
     final ready = claimable(state).isNotEmpty;
 
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        IconButton(
-          onPressed: _openAchievements,
-          icon: const Icon(
-            Icons.emoji_events_outlined,
-            color: AppColors.textMuted,
-          ),
+    return GestureDetector(
+      onTap: _openAchievements,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+        child: Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.center,
+          children: [
+            ProgressRing(
+              ratio: done / kAchievements.length,
+              size: 34,
+              thickness: 2.6,
+              child: const Icon(
+                Icons.emoji_events,
+                size: 17,
+                color: AppColors.gold,
+              ),
+            ),
+            if (ready)
+              const Positioned(top: -2, right: -2, child: UnreadDot(size: 10)),
+          ],
         ),
-        if (ready)
-          const Positioned(top: 6, right: 6, child: UnreadDot(size: 9)),
-      ],
+      ),
     );
   }
 
