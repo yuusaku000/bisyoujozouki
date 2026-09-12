@@ -42,13 +42,9 @@
       background: radial-gradient(circle at 50% 42%, #2E1D38 0%, #170E1A 62%, #0E0710 100%);
       color: #F8EEF4;
       /*
-        幕はFlutterのフォントを使えないのでOS側に頼る。
-        日本語を持つ書体を先に並べる。欧文書体を先に置くと、
-        字が見つからず豆腐（□）になる環境がある。
+        文字は置かない。幕はFlutterのフォントを使えず、OSに日本語書体が
+        無い環境では豆腐（□）になる。題名はFlutter側の画面で出す。
       */
-      font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic",
-        YuGothic, Meiryo, "Noto Sans JP", "Noto Sans CJK JP", "Droid Sans Japanese",
-        system-ui, sans-serif;
       transition: opacity .45s ease;
       z-index: 9999;
     }
@@ -80,25 +76,9 @@
       56%      { transform: scale(1); }
     }
 
-    .title {
-      margin-top: 26px;
-      font-size: 21px;
-      font-weight: 800;
-      letter-spacing: 7px;
-      color: #FF88AC;
-      text-shadow: 0 0 22px rgba(255, 136, 172, .45);
-    }
-
-    .note {
-      margin-top: 10px;
-      font-size: 12px;
-      letter-spacing: 1px;
-      color: #B39EBC;
-    }
-
     /* 進み具合は本当には分からないので、動いていることだけ見せる */
     .bar {
-      margin-top: 26px;
+      margin-top: 30px;
       width: 168px;
       height: 3px;
       border-radius: 2px;
@@ -128,8 +108,6 @@
         <path fill="#FF88AC" d="M12 21s-7.5-4.7-9.5-9A5.3 5.3 0 0 1 12 6.2 5.3 5.3 0 0 1 21.5 12c-2 4.3-9.5 9-9.5 9z"/>
       </svg>
     </div>
-    <div class="title">臓器っち</div>
-    <div class="note">読み込んでいます…</div>
     <div class="bar"><span></span></div>
   </div>
 
