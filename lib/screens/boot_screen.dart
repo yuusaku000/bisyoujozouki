@@ -69,26 +69,6 @@ class _BootScreenState extends State<BootScreen>
                 ),
               ),
               const SizedBox(height: 26),
-              const Text(
-                '臓器っち',
-                style: TextStyle(
-                  fontSize: 21,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 7,
-                  color: AppColors.rose,
-                  shadows: [Shadow(color: AppColors.rose, blurRadius: 22)],
-                ),
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                '読み込んでいます…',
-                style: TextStyle(
-                  fontSize: 12,
-                  letterSpacing: 1,
-                  color: AppColors.textMuted,
-                ),
-              ),
-              const SizedBox(height: 26),
               _bar(),
             ],
           ),
