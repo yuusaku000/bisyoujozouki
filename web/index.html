@@ -41,7 +41,14 @@
       justify-content: center;
       background: radial-gradient(circle at 50% 42%, #2E1D38 0%, #170E1A 62%, #0E0710 100%);
       color: #F8EEF4;
-      font-family: system-ui, -apple-system, "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+      /*
+        幕はFlutterのフォントを使えないのでOS側に頼る。
+        日本語を持つ書体を先に並べる。欧文書体を先に置くと、
+        字が見つからず豆腐（□）になる環境がある。
+      */
+      font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic",
+        YuGothic, Meiryo, "Noto Sans JP", "Noto Sans CJK JP", "Droid Sans Japanese",
+        system-ui, sans-serif;
       transition: opacity .45s ease;
       z-index: 9999;
     }
