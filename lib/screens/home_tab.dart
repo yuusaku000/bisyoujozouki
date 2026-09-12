@@ -376,13 +376,12 @@ class _HomeTabState extends State<HomeTab> {
                           fit: BoxFit.contain,
                         ),
                       ),
+                      Positioned(top: 10, right: 12, child: _vitalCard(status)),
                       _speechBubble(status),
                     ],
                   ),
                 ),
               ),
-              _vitalStrip(),
-              const SizedBox(height: 8),
               _mark(widget.anchors?.party, _partyStrip()),
               const SizedBox(height: 12),
               _actions(status),
@@ -583,108 +582,78 @@ class _HomeTabState extends State<HomeTab> {
     );
   }
 
-  /// いま体がどう動いているか。代表値だけを並べる。
+  /// いま見ている子の計測値。頭の横に、その子のぶんだけ。
   ///
-  /// 数字が並んでいると、調子が良い日と悪い日の違いが目に見える。
-  /// 意味と、明日なにをすればいいのかは詳細に置く。
-  Widget _vitalStrip() {
-    final party = state.party;
+  /// 五人ぶん並べると数字の壁になる。誰の値なのかも分かりにくい。
+  /// 顔の隣にあれば、見ている子のものだと説明がいらない。
+  Widget _vitalCard(OrganStatus status) {
+    final vitals = kVitals.read(_organ, status, state.dayCount);
 
-    return SizedBox(
-      height: 30,
-      child: Row(
-        children: [
-          Expanded(
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.only(left: 14),
-              itemCount: party.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 7),
-              itemBuilder: (context, i) {
-                final organ = party[i];
-                final status = state.statusOf(organ.id);
-                final vital = kVitals.read(organ, status, state.dayCount).first;
-                return _vitalChip(organ, vital);
-              },
-            ),
-          ),
-          const SizedBox(width: 6),
-          Padding(
-            padding: const EdgeInsets.only(right: 14),
-            child: GestureDetector(
-              onTap: _openVitals,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                height: 30,
-                decoration: BoxDecoration(
-                  color: AppColors.hollow.withValues(alpha: 0.85),
-                  borderRadius: BorderRadius.circular(15),
-                  border: Border.all(
-                    color: AppColors.goldDim.withValues(alpha: 0.8),
-                  ),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '詳細',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.gold,
-                      ),
-                    ),
-                    Icon(Icons.chevron_right, size: 14, color: AppColors.gold),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _vitalChip(Organ organ, Vital vital) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      constraints: const BoxConstraints(maxWidth: 124),
+      padding: const EdgeInsets.fromLTRB(11, 9, 11, 7),
       decoration: BoxDecoration(
-        color: AppColors.hollow.withValues(alpha: 0.85),
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: organ.accent.withValues(alpha: 0.7)),
+        color: AppColors.hollow.withValues(alpha: 0.82),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _organ.accent.withValues(alpha: 0.7)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 6,
-            height: 6,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: organ.accent,
-            ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            vital.label,
-            style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
-          ),
-          const SizedBox(width: 5),
-          Text(
-            vital.value,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w900,
-              color: vital.inRange ? AppColors.textPrimary : AppColors.fuchou,
-            ),
-          ),
-          if (vital.unit.isNotEmpty) ...[
-            const SizedBox(width: 2),
+          for (final vital in vitals) ...[
             Text(
-              vital.unit,
+              vital.label,
               style: const TextStyle(fontSize: 9, color: AppColors.textMuted),
             ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  vital.value,
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w900,
+                    height: 1.15,
+                    color: vital.inRange
+                        ? AppColors.textPrimary
+                        : AppColors.fuchou,
+                  ),
+                ),
+                if (vital.unit.isNotEmpty) ...[
+                  const SizedBox(width: 2),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 2),
+                    child: Text(
+                      vital.unit,
+                      style: const TextStyle(
+                        fontSize: 9,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 6),
           ],
+          GestureDetector(
+            onTap: _openVitals,
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '詳細',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.gold,
+                  ),
+                ),
+                Icon(Icons.chevron_right, size: 13, color: AppColors.gold),
+              ],
+            ),
+          ),
         ],
       ),
     );
