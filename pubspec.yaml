@@ -58,6 +58,19 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+  # 日本語の書体を同梱する。
+  #
+  # 入れないと、Flutter web が代替書体を実行時に取りに行くあいだ
+  # 画面じゅうが豆腐（□）になる。初回に必ず見えるので同梱する。
+  # 画面に出る字だけに絞ってあるので、2ウェイトで1MB足らず。
+  fonts:
+    - family: NotoSansJP
+      fonts:
+        - asset: assets/fonts/NotoSansJP-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/NotoSansJP-Bold.ttf
+          weight: 700
+
   assets:
     - assets/organs/heart/
     - assets/organs/lung/

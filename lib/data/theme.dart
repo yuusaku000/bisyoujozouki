@@ -50,9 +50,12 @@ ThemeData buildAppTheme() {
       primary: AppColors.rose,
       surface: AppColors.panelSoft,
     ),
+    // 同梱した書体を既定にする。端末やブラウザの持ち物に頼らない。
     textTheme: base.textTheme.apply(
+      fontFamily: 'NotoSansJP',
       bodyColor: AppColors.textPrimary,
       displayColor: AppColors.textPrimary,
     ),
+    primaryTextTheme: base.primaryTextTheme.apply(fontFamily: 'NotoSansJP'),
   );
 }
