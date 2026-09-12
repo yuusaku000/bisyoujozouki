@@ -44,7 +44,26 @@ void main() {
     test('クリアしたステージまでが解放される', () {
       expect(unlockedEpisodes(0), isEmpty);
       expect(unlockedEpisodes(1).length, 1);
-      expect(unlockedEpisodes(10).length, kStory.length);
+      expect(unlockedEpisodes(10).length, 10);
+      expect(unlockedEpisodes(30).length, kStory.length);
+    });
+
+    test('10までは毎ステージ、そこから先は2ステージごと', () {
+      final stages = kStory.map((e) => e.stage).toList();
+
+      expect(stages.take(10), List.generate(10, (i) => i + 1));
+      expect(stages.skip(10), [12, 14, 16, 18, 20, 22, 24, 26, 28, 30]);
+    });
+
+    test('話はステージの順に並んでいる', () {
+      // 一覧は配列順に「第N話」を振る。前後すると番号がずれる
+      final stages = kStory.map((e) => e.stage).toList();
+      expect(stages, [...stages]..sort());
+    });
+
+    test('ステージ番号が重複しない', () {
+      final stages = kStory.map((e) => e.stage).toList();
+      expect(stages.toSet().length, stages.length);
     });
 
     test('話す臓器はすべて実在する', () {
@@ -63,7 +82,9 @@ void main() {
     });
 
     test('ボスのステージに話がある', () {
-      expect(episodeForStage(10), isNotNull);
+      for (final stage in [10, 20, 30]) {
+        expect(episodeForStage(stage), isNotNull, reason: 'ステージ$stage に話がない');
+      }
     });
 
     test('指定された敵はすべて実在する', () {

@@ -8,7 +8,9 @@ import 'battle_screen.dart';
 import 'grow_tab.dart';
 import 'home_tab.dart';
 import 'gacha_tab.dart';
+import '../data/story.dart';
 import 'shop_tab.dart';
+import 'story_screen.dart';
 import 'tutorial.dart';
 
 /// 画面が増えたので下のタブで分ける。ホームに全部載せると、
@@ -56,13 +58,31 @@ class _MainShellState extends State<MainShell> {
     setState(() => _state = GameState.fresh());
   }
 
-  /// 最初の一戦。ここを勝つと第1話が開くので、案内の中で読ませられる。
+  /// 最初の一戦と、そのまま続く第1話。
+  ///
+  /// 倒した直後が初対面の場面なので、一覧に戻して探させず、
+  /// そのまま読ませる。案内はそのあと。
   Future<void> _introBattle(GameState state) async {
     await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => BattleScreen(state: state)),
     );
     if (!mounted) return;
+
+    final first = episodeForStage(1);
+    if (first != null && state.clearedStage >= 1) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => StoryScreen(
+            episode: first,
+            onRead: () => state.markEpisodeRead(first.key),
+          ),
+        ),
+      );
+      if (!mounted) return;
+    }
+
     state.tutorialPhase = 1;
     _changed();
   }

@@ -18,12 +18,15 @@ class IntroOverlay extends StatefulWidget {
 }
 
 class _IntroOverlayState extends State<IntroOverlay> {
+  /// まだ出会っていない時点の声。
+  ///
+  /// 「聞こえてる？」の驚きは第1話でやる。ここで先に言ってしまうと、
+  /// 戦いのあとの初対面が二度手間になる。ここは警告だけにとどめる。
   static const List<(String, Condition)> _lines = [
-    ('え……あなた、いま。', Condition.futsuu),
-    ('わたしの声、聞こえてる……？', Condition.futsuu),
-    ('ずっと呼んでたんだよ。生まれた日から、ずっと。', Condition.genki),
-    ('……っ、だめ。来る。', Condition.fuchou),
-    ('説明はあと！　いまは、見ててっ！', Condition.fuchou),
+    ('——来る。', Condition.fuchou),
+    ('こんな時間に、あんなもの食べるから。', Condition.fuchou),
+    ('いい？　そこ、動かないで。', Condition.futsuu),
+    ('説明はあと。いまは、見てて。', Condition.fuchou),
   ];
 
   int _index = 0;
@@ -169,8 +172,8 @@ class _TutorialOverlayState extends State<TutorialOverlay>
   late final List<TutorialStep> _steps = [
     TutorialStep(
       text:
-          '……ふう。おつかれさま。\n'
-          'さっきは説明もしないで、ごめんね。\n改めて、この画面を案内するね。',
+          '……で。さっきの続きなんだけど。\n'
+          '説明もしないで戦わせて、ごめんね。\n改めて、この画面を案内する。',
       face: Condition.genki,
     ),
     TutorialStep(
@@ -203,7 +206,7 @@ class _TutorialOverlayState extends State<TutorialOverlay>
     TutorialStep(
       target: widget.anchors.story,
       text:
-          'さっきのこと、もうお話になってる。ここから読めるよ。\n'
+          'お話は、ここにしまってあるよ。\n'
           '赤い丸は、まだ読んでいない印。',
     ),
     TutorialStep(

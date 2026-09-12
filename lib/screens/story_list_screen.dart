@@ -105,26 +105,56 @@ class _StoryListScreenState extends State<StoryListScreen>
     );
   }
 
+  /// まだ開いていない話は出さない。題名だけでも見えると、
+  /// この先なにが起きるかが分かってしまう。
   Widget _mainList() {
+    final open = unlockedEpisodes(widget.clearedStage);
+    final hasMore = open.length < kStory.length;
+
+    if (open.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32),
+          child: Text(
+            'ステージに挑むと、お話が増えていきます',
+            style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+          ),
+        ),
+      );
+    }
+
     return ListView.separated(
       padding: const EdgeInsets.all(16),
-      itemCount: kStory.length,
+      itemCount: open.length + (hasMore ? 1 : 0),
       separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (context, i) {
-        final episode = kStory[i];
-        final open = episode.stage <= widget.clearedStage;
+        if (i == open.length) return _more();
+        final episode = open[i];
         return _row(
-          open: open,
+          open: true,
           unread: _mainUnread(episode),
           child: _card(
-            title: open ? episode.title : '？？？',
-            subtitle: open ? '第${i + 1}話' : 'ステージ ${episode.stage} をこえると',
-            color: open ? AppColors.rose : AppColors.goldDim,
-            icon: open ? Icons.auto_stories : Icons.lock,
-            onTap: open ? () => _open(episode, episode.key) : null,
+            title: episode.title,
+            subtitle: '第${i + 1}話',
+            color: AppColors.rose,
+            icon: Icons.auto_stories,
+            onTap: () => _open(episode, episode.key),
           ),
         );
       },
+    );
+  }
+
+  /// この先があることだけ伝える。何話あるかも、題名も出さない。
+  Widget _more() {
+    return const Padding(
+      padding: EdgeInsets.only(top: 10),
+      child: Center(
+        child: Text(
+          'つづきは、先に進むと',
+          style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+        ),
+      ),
     );
   }
 
