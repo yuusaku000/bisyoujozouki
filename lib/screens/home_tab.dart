@@ -10,6 +10,7 @@ import '../models/organ.dart';
 import '../widgets/coin_text.dart';
 import '../widgets/health_bar.dart';
 import '../widgets/ornate.dart';
+import '../widgets/today_clock.dart';
 import '../widgets/top_toast.dart';
 import 'battle_screen.dart';
 import 'daily_input_sheet.dart';
@@ -338,6 +339,7 @@ class _HomeTabState extends State<HomeTab> {
           child: Column(
             children: [
               _topBar(),
+              _todayLine(),
               Expanded(
                 child: GestureDetector(
                   onTap: () => setState(() => _talkCount++),
@@ -389,6 +391,40 @@ class _HomeTabState extends State<HomeTab> {
               ),
             ),
             icon: const Icon(Icons.settings, color: AppColors.textMuted),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 現実の日付・時刻と、今日の目標歩数。
+  ///
+  /// 「N日目」はゲームの中の数字なので、現実のいつの記録なのか分からない。
+  /// 目標も、記録シートを開くまで見えないのでは狙いようがない。
+  Widget _todayLine() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 0, 18, 6),
+      child: Row(
+        children: [
+          const Icon(Icons.schedule, size: 12, color: AppColors.textMuted),
+          const SizedBox(width: 6),
+          const TodayClock(
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textMuted,
+            ),
+          ),
+          const Spacer(),
+          const Icon(Icons.directions_walk, size: 13, color: AppColors.rose),
+          const SizedBox(width: 4),
+          Text(
+            '目標 ${formatCoins(state.stepGoal)}歩',
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              color: AppColors.rose,
+            ),
           ),
         ],
       ),
