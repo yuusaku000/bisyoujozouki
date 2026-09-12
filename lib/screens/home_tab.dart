@@ -10,7 +10,9 @@ import '../models/organ.dart';
 import '../widgets/coin_text.dart';
 import '../widgets/health_bar.dart';
 import '../widgets/ornate.dart';
+import '../models/vitals.dart';
 import '../widgets/today_clock.dart';
+import 'vitals_screen.dart';
 import 'tutorial.dart';
 import '../widgets/top_toast.dart';
 import 'battle_screen.dart';
@@ -379,6 +381,8 @@ class _HomeTabState extends State<HomeTab> {
                   ),
                 ),
               ),
+              _vitalStrip(),
+              const SizedBox(height: 8),
               _mark(widget.anchors?.party, _partyStrip()),
               const SizedBox(height: 12),
               _actions(status),
@@ -577,6 +581,121 @@ class _HomeTabState extends State<HomeTab> {
         ),
       ),
     );
+  }
+
+  /// いま体がどう動いているか。代表値だけを並べる。
+  ///
+  /// 数字が並んでいると、調子が良い日と悪い日の違いが目に見える。
+  /// 意味と、明日なにをすればいいのかは詳細に置く。
+  Widget _vitalStrip() {
+    final party = state.party;
+
+    return SizedBox(
+      height: 30,
+      child: Row(
+        children: [
+          Expanded(
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.only(left: 14),
+              itemCount: party.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 7),
+              itemBuilder: (context, i) {
+                final organ = party[i];
+                final status = state.statusOf(organ.id);
+                final vital = kVitals.read(organ, status, state.dayCount).first;
+                return _vitalChip(organ, vital);
+              },
+            ),
+          ),
+          const SizedBox(width: 6),
+          Padding(
+            padding: const EdgeInsets.only(right: 14),
+            child: GestureDetector(
+              onTap: _openVitals,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                height: 30,
+                decoration: BoxDecoration(
+                  color: AppColors.hollow.withValues(alpha: 0.85),
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(
+                    color: AppColors.goldDim.withValues(alpha: 0.8),
+                  ),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '詳細',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.gold,
+                      ),
+                    ),
+                    Icon(Icons.chevron_right, size: 14, color: AppColors.gold),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _vitalChip(Organ organ, Vital vital) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: AppColors.hollow.withValues(alpha: 0.85),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: organ.accent.withValues(alpha: 0.7)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: organ.accent,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            vital.label,
+            style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
+          ),
+          const SizedBox(width: 5),
+          Text(
+            vital.value,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+              color: vital.inRange ? AppColors.textPrimary : AppColors.fuchou,
+            ),
+          ),
+          if (vital.unit.isNotEmpty) ...[
+            const SizedBox(width: 2),
+            Text(
+              vital.unit,
+              style: const TextStyle(fontSize: 9, color: AppColors.textMuted),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openVitals() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => VitalsScreen(state: state)),
+    );
+    if (mounted) setState(() {});
   }
 
   Widget _partyStrip() {
