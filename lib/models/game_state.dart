@@ -65,7 +65,16 @@ class GameState {
     this.battleSpeed = BattleSpeed.normal,
     this.tutorialPhase = 0,
     this.devMode = false,
-  });
+    Map<String, List<int>>? healthLog,
+  }) : healthLog = healthLog ?? <String, List<int>>{};
+
+  /// 臓器ごとの健康度の記録。1日を締めるたびに後ろへ足す。
+  ///
+  /// 推移を見せるのに要る。持っていないと、グラフが作り話になる。
+  final Map<String, List<int>> healthLog;
+
+  /// 残す日数。古いぶんは捨てる。
+  static const int logDays = 14;
 
   /// 案内の進み具合。0=まだ、1=最初のバトルを終えた、2=案内も終わった。
   ///
@@ -260,6 +269,12 @@ class GameState {
       organs[organ.id] = statusOf(organ.id).applyHealthDelta(delta);
     }
 
+    for (final organ in party) {
+      final log = healthLog.putIfAbsent(organ.id, () => <int>[])
+        ..add(statusOf(organ.id).health);
+      if (log.length > logDays) log.removeRange(0, log.length - logDays);
+    }
+
     final cleared = missions.where((m) => m.isDone(today, stepGoal)).toList();
     for (final m in cleared) {
       keys += m.reward.keys;
@@ -322,6 +337,7 @@ class GameState {
     'missionIds': missionIds,
     'battleSpeed': battleSpeed.name,
     'tutorialPhase': tutorialPhase,
+    'healthLog': healthLog,
     'devMode': devMode,
     'inventory': inventory,
     'pullsSinceSsr': pullsSinceSsr,
@@ -356,6 +372,12 @@ class GameState {
           .map((e) => e as String)
           .toList(),
       // 以前は見たかどうかの真偽値だけだった。見終えていれば最後まで進める。
+      healthLog: {
+        for (final entry
+            in ((map['healthLog'] as Map<String, dynamic>?) ?? const {})
+                .entries)
+          entry.key: [for (final v in entry.value as List<dynamic>) v as int],
+      },
       tutorialPhase:
           map['tutorialPhase'] as int? ??
           ((map['tutorialDone'] as bool? ?? false) ? 2 : 0),

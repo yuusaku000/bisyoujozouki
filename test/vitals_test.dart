@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zoukicchi/data/advice.dart';
 import 'package:zoukicchi/data/organs.dart';
+import 'package:zoukicchi/models/game_state.dart';
 import 'package:zoukicchi/models/organ.dart';
 import 'package:zoukicchi/models/vitals.dart';
 
@@ -81,6 +82,62 @@ void main() {
           reason: '${organ.name} が不調でも全部範囲内になっている',
         );
       }
+    });
+  });
+
+  group('推移', () {
+    test('健康度の記録は1日を締めるたびに増える', () {
+      final state = GameState.fresh();
+      expect(state.healthLog, isEmpty);
+
+      state.endDay();
+      state.endDay();
+
+      for (final organ in state.party) {
+        expect(state.healthLog[organ.id], hasLength(2));
+      }
+    });
+
+    test('まだ会っていない子は記録しない', () {
+      final state = GameState.fresh();
+      state.endDay();
+
+      expect(state.healthLog.containsKey('brain'), isFalse);
+    });
+
+    test('古いぶんは捨てる', () {
+      final state = GameState.fresh();
+      for (var i = 0; i < GameState.logDays + 6; i++) {
+        state.endDay();
+      }
+
+      expect(state.healthLog['heart'], hasLength(GameState.logDays));
+    });
+
+    test('記録が保存される', () {
+      final state = GameState.fresh();
+      state.endDay();
+
+      final restored = GameState.decode(state.encode());
+      expect(restored.healthLog['heart'], state.healthLog['heart']);
+    });
+
+    test('増えて良い指標かが指標ごとに決まっている', () {
+      // 推測で決めると、心拍が上がったのを緑で出すような間違いが起きる
+      final vitals = {
+        for (final organ in kOrgans)
+          for (final v in kVitals.read(organ, const OrganStatus(), 1))
+            v.label: v.higherIsBetter,
+      };
+
+      expect(vitals['安静時心拍'], isFalse);
+      expect(vitals['呼吸数'], isFalse);
+      expect(vitals['食後に落ち着くまで'], isFalse);
+      expect(vitals['心拍変動'], isTrue);
+      expect(vitals['血中酸素'], isTrue);
+      expect(vitals['睡眠スコア'], isTrue);
+      expect(vitals['深い眠り'], isTrue);
+      expect(vitals['休めた時間'], isTrue);
     });
   });
 

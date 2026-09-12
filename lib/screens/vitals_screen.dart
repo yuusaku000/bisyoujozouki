@@ -7,6 +7,7 @@ import '../models/organ.dart';
 import '../models/vitals.dart';
 import '../widgets/health_bar.dart';
 import '../widgets/ornate.dart';
+import '../widgets/vital_chart.dart';
 import '../widgets/today_clock.dart';
 
 /// きょうの計測値と、本人からの一言。
@@ -51,8 +52,37 @@ class VitalsScreen extends StatelessWidget {
     );
   }
 
+  /// 指標ごとの推移。記録した健康度を、その日の日付で引き直す。
+  ///
+  /// 記録が足りないうちは、いちばん古い値で前を埋める。
+  /// 点がひとつでは線にならず、グラフの意味がない。
+  List<List<double>> _series(Organ organ, OrganStatus status, int count) {
+    // 記録は1日を締めた時点の値。いまの健康度はその最後の1件と同じなので、
+    // 足すと末尾が重なり、増減が出ないか、ぶれの差だけの嘘の増減になる。
+    final recorded = state.healthLog[organ.id];
+    final log = (recorded == null || recorded.isEmpty)
+        ? [status.health]
+        : [...recorded];
+    final filled = [
+      for (var i = 0; i < count - log.length; i++) log.first,
+      ...log.length > count ? log.sublist(log.length - count) : log,
+    ];
+
+    final today = state.dayCount;
+    final rows = [
+      for (var i = 0; i < filled.length; i++)
+        kVitals.readAt(organ, filled[i], today - (filled.length - 1 - i)),
+    ];
+
+    return [
+      for (var m = 0; m < rows.first.length; m++)
+        [for (final row in rows) row[m].raw],
+    ];
+  }
+
   Widget _card(Organ organ, OrganStatus status) {
     final vitals = kVitals.read(organ, status, state.dayCount);
+    final series = _series(organ, status, _spanDays);
 
     return OrnatePanel(
       borderColor: organ.accent,
@@ -89,9 +119,17 @@ class VitalsScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          for (final vital in vitals) ...[
-            _vitalRow(vital),
-            const SizedBox(height: 10),
+          for (var i = 0; i < vitals.length; i++) ...[
+            _vitalRow(vitals[i], series[i]),
+            VitalChart(
+              points: series[i],
+              low: vitals[i].low,
+              high: vitals[i].high,
+              color: organ.accent,
+            ),
+            const SizedBox(height: 4),
+            _axis(),
+            const SizedBox(height: 14),
           ],
           const SizedBox(height: 2),
           _adviceBox(organ, status),
@@ -120,7 +158,59 @@ class VitalsScreen extends StatelessWidget {
     );
   }
 
-  Widget _vitalRow(Vital vital) {
+  static const int _spanDays = 7;
+
+  /// 昨日からどれだけ動いたか。上がったか下がったかだけ分かればいい。
+  Widget _delta(List<double> points, bool moreIsBetter) {
+    if (points.length < 2) return const SizedBox.shrink();
+
+    final diff = points.last - points[points.length - 2];
+    if (diff.abs() < 0.05) {
+      return const Text(
+        '±0',
+        style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+      );
+    }
+
+    final up = diff > 0;
+    final good = up == moreIsBetter;
+    final text =
+        '${up ? '+' : ''}${diff.abs() < 10 ? diff.toStringAsFixed(1) : diff.round()}';
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          up ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+          size: 16,
+          color: good ? AppColors.genki : AppColors.fuchou,
+        ),
+        Text(
+          text,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: good ? AppColors.genki : AppColors.fuchou,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _axis() {
+    return const Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          '$_spanDays日前',
+          style: TextStyle(fontSize: 9, color: AppColors.textMuted),
+        ),
+        Text('きょう', style: TextStyle(fontSize: 9, color: AppColors.textMuted)),
+      ],
+    );
+  }
+
+  Widget _vitalRow(Vital vital, List<double> points) {
     final color = vital.inRange ? AppColors.genki : AppColors.fuchou;
 
     return Row(
@@ -138,12 +228,18 @@ class VitalsScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 2),
-              Text(
-                '目安 ${vital.normal}',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: AppColors.textMuted.withValues(alpha: 0.7),
-                ),
+              Row(
+                children: [
+                  Text(
+                    '目安 ${vital.normal}',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: AppColors.textMuted.withValues(alpha: 0.7),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  _delta(points, vital.higherIsBetter),
+                ],
               ),
             ],
           ),
