@@ -4,10 +4,12 @@ import '../data/theme.dart';
 import '../models/game_state.dart';
 import '../services/save_store.dart';
 import '../services/step_source.dart';
+import 'battle_screen.dart';
 import 'grow_tab.dart';
 import 'home_tab.dart';
 import 'gacha_tab.dart';
 import 'shop_tab.dart';
+import 'tutorial.dart';
 
 /// 画面が増えたので下のタブで分ける。ホームに全部載せると、
 /// 立ち絵を見る場所なのか数字をいじる場所なのか分からなくなる。
@@ -21,6 +23,8 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   final _store = SaveStore();
   final StepSource _stepSource = ManualStepSource();
+
+  final _anchors = HomeAnchors();
 
   GameState? _state;
   int _tab = 0;
@@ -52,6 +56,17 @@ class _MainShellState extends State<MainShell> {
     setState(() => _state = GameState.fresh());
   }
 
+  /// 最初の一戦。ここを勝つと第1話が開くので、案内の中で読ませられる。
+  Future<void> _introBattle(GameState state) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => BattleScreen(state: state)),
+    );
+    if (!mounted) return;
+    state.tutorialPhase = 1;
+    _changed();
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = _state;
@@ -61,17 +76,44 @@ class _MainShellState extends State<MainShell> {
       );
     }
 
-    return Scaffold(
-      body: IndexedStack(
-        index: _tab,
-        children: [
-          HomeTab(state: state, onChanged: _changed, onReset: _reset),
-          GrowTab(state: state, onChanged: _changed),
-          GachaTab(state: state, onChanged: _changed),
-          ShopTab(state: state, onChanged: _changed),
-        ],
-      ),
-      bottomNavigationBar: _bar(state),
+    return Stack(
+      children: [
+        Scaffold(
+          body: IndexedStack(
+            index: _tab,
+            children: [
+              HomeTab(
+                state: state,
+                onChanged: _changed,
+                onReset: _reset,
+                anchors: _anchors,
+              ),
+              GrowTab(state: state, onChanged: _changed),
+              GachaTab(state: state, onChanged: _changed),
+              ShopTab(state: state, onChanged: _changed),
+            ],
+          ),
+          bottomNavigationBar: KeyedSubtree(
+            key: _anchors.nav,
+            child: _bar(state),
+          ),
+        ),
+        // まず一戦、それから画面の案内。順番はここで決まる。
+        if (state.tutorialPhase == 0)
+          Positioned.fill(
+            child: IntroOverlay(onBattle: () => _introBattle(state)),
+          ),
+        if (state.tutorialPhase == 1)
+          Positioned.fill(
+            child: TutorialOverlay(
+              anchors: _anchors,
+              onDone: () {
+                state.tutorialPhase = 2;
+                _changed();
+              },
+            ),
+          ),
+      ],
     );
   }
 

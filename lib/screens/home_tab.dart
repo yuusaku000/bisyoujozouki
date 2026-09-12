@@ -11,6 +11,7 @@ import '../widgets/coin_text.dart';
 import '../widgets/health_bar.dart';
 import '../widgets/ornate.dart';
 import '../widgets/today_clock.dart';
+import 'tutorial.dart';
 import '../widgets/top_toast.dart';
 import 'battle_screen.dart';
 import 'daily_input_sheet.dart';
@@ -25,11 +26,15 @@ class HomeTab extends StatefulWidget {
     required this.state,
     required this.onChanged,
     required this.onReset,
+    this.anchors,
   });
 
   final GameState state;
   final VoidCallback onChanged;
   final Future<void> Function() onReset;
+
+  /// 案内で指す場所の目印。案内を終えた人には渡ってこない。
+  final HomeAnchors? anchors;
 
   @override
   State<HomeTab> createState() => _HomeTabState();
@@ -97,6 +102,22 @@ class _HomeTabState extends State<HomeTab> {
         icon: Icons.auto_stories,
       );
     }
+  }
+
+  /// 設定で変えた値も保存する。戻ってきてから通すのを忘れると、
+  /// アプリを閉じた時点で元に戻る。
+  Future<void> _openSettings() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SettingsScreen(
+          state: state,
+          onChanged: widget.onChanged,
+          onReset: widget.onReset,
+        ),
+      ),
+    );
+    if (mounted) setState(() {});
   }
 
   Future<void> _openStoryList() async {
@@ -339,7 +360,7 @@ class _HomeTabState extends State<HomeTab> {
           child: Column(
             children: [
               _topBar(),
-              _todayLine(),
+              _mark(widget.anchors?.today, _todayLine()),
               Expanded(
                 child: GestureDetector(
                   onTap: () => setState(() => _talkCount++),
@@ -358,7 +379,7 @@ class _HomeTabState extends State<HomeTab> {
                   ),
                 ),
               ),
-              _partyStrip(),
+              _mark(widget.anchors?.party, _partyStrip()),
               const SizedBox(height: 12),
               _actions(status),
             ],
@@ -375,21 +396,18 @@ class _HomeTabState extends State<HomeTab> {
         children: [
           _pill('${state.dayCount}日目'),
           const SizedBox(width: 8),
-          _pill(
-            formatCoins(state.coins),
-            icon: Icons.circle,
-            color: AppColors.gold,
+          _mark(
+            widget.anchors?.coin,
+            _pill(
+              formatCoins(state.coins),
+              icon: Icons.circle,
+              color: AppColors.gold,
+            ),
           ),
           const Spacer(),
-          _storyButton(),
+          _mark(widget.anchors?.story, _storyButton()),
           IconButton(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) =>
-                    SettingsScreen(state: state, onReset: widget.onReset),
-              ),
-            ),
+            onPressed: _openSettings,
             icon: const Icon(Icons.settings, color: AppColors.textMuted),
           ),
         ],
@@ -401,6 +419,10 @@ class _HomeTabState extends State<HomeTab> {
   ///
   /// 「N日目」はゲームの中の数字なので、現実のいつの記録なのか分からない。
   /// 目標も、記録シートを開くまで見えないのでは狙いようがない。
+  /// 案内で指せるように目印を付ける。案内がないときは素通し。
+  Widget _mark(GlobalKey? key, Widget child) =>
+      key == null ? child : KeyedSubtree(key: key, child: child);
+
   Widget _todayLine() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 0, 18, 6),
@@ -628,37 +650,43 @@ class _HomeTabState extends State<HomeTab> {
       padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
       child: Column(
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: QuietButton(
-                  label: state.hasMissions
-                      ? '今日の目標 ${state.missionIds.length}'
-                      : '目標をえらぶ',
-                  icon: Icons.checklist,
-                  onPressed: _openMissions,
+          _mark(
+            widget.anchors?.record,
+            Row(
+              children: [
+                Expanded(
+                  child: QuietButton(
+                    label: state.hasMissions
+                        ? '今日の目標 ${state.missionIds.length}'
+                        : '目標をえらぶ',
+                    icon: Icons.checklist,
+                    onPressed: _openMissions,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                flex: 2,
-                child: JewelButton(
-                  label: '今日を記録する',
-                  height: 48,
-                  onPressed: _recordDay,
+                const SizedBox(width: 10),
+                Expanded(
+                  flex: 2,
+                  child: JewelButton(
+                    label: '今日を記録する',
+                    height: 48,
+                    onPressed: _recordDay,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           const SizedBox(height: 10),
-          JewelButton(
-            label: 'ステージ ${state.currentStage} に挑む',
-            icon: Icons.local_fire_department,
-            height: 48,
-            gradient: const LinearGradient(
-              colors: [Color(0xFF8E4BC4), Color(0xFF5B2E86)],
+          _mark(
+            widget.anchors?.battle,
+            JewelButton(
+              label: 'ステージ ${state.currentStage} に挑む',
+              icon: Icons.local_fire_department,
+              height: 48,
+              gradient: const LinearGradient(
+                colors: [Color(0xFF8E4BC4), Color(0xFF5B2E86)],
+              ),
+              onPressed: _goToBattle,
             ),
-            onPressed: _goToBattle,
           ),
         ],
       ),

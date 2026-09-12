@@ -63,7 +63,19 @@ class GameState {
     required this.inventory,
     required this.pullsSinceSsr,
     this.battleSpeed = BattleSpeed.normal,
+    this.tutorialPhase = 0,
+    this.devMode = false,
   });
+
+  /// 案内の進み具合。0=まだ、1=最初のバトルを終えた、2=案内も終わった。
+  ///
+  /// 説明から入ると読まれない。まず一戦させて、最初の話を開けてから案内する。
+  int tutorialPhase;
+
+  bool get tutorialDone => tutorialPhase >= 2;
+
+  /// 開発者モード。動作確認のために数値を直接いじれるようにする。
+  bool devMode;
 
   factory GameState.fresh() => GameState(
     coins: 0,
@@ -309,6 +321,8 @@ class GameState {
     'tickets': tickets,
     'missionIds': missionIds,
     'battleSpeed': battleSpeed.name,
+    'tutorialPhase': tutorialPhase,
+    'devMode': devMode,
     'inventory': inventory,
     'pullsSinceSsr': pullsSinceSsr,
   });
@@ -341,6 +355,11 @@ class GameState {
       missionIds: ((map['missionIds'] as List<dynamic>?) ?? const [])
           .map((e) => e as String)
           .toList(),
+      // 以前は見たかどうかの真偽値だけだった。見終えていれば最後まで進める。
+      tutorialPhase:
+          map['tutorialPhase'] as int? ??
+          ((map['tutorialDone'] as bool? ?? false) ? 2 : 0),
+      devMode: map['devMode'] as bool? ?? false,
       battleSpeed: BattleSpeed.values.firstWhere(
         (s) => s.name == map['battleSpeed'],
         orElse: () => BattleSpeed.normal,

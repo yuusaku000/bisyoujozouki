@@ -1,14 +1,24 @@
 import 'package:flutter/material.dart';
 
 import '../data/theme.dart';
+import '../data/chara_story.dart';
+import '../data/organs.dart';
+import '../data/story.dart';
 import '../models/game_state.dart';
+import '../models/organ.dart';
 import '../widgets/coin_text.dart';
 import '../widgets/ornate.dart';
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key, required this.state, required this.onReset});
+  const SettingsScreen({
+    super.key,
+    required this.state,
+    required this.onChanged,
+    required this.onReset,
+  });
 
   final GameState state;
+  final VoidCallback onChanged;
   final Future<void> Function() onReset;
 
   @override
@@ -17,6 +27,12 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   GameState get state => widget.state;
+
+  /// 設定で触った値はその場で保存する。まとめて後で、だと取りこぼす。
+  void _edit(VoidCallback change) {
+    setState(change);
+    widget.onChanged();
+  }
 
   Future<void> _confirmReset() async {
     final ok = await showDialog<bool>(
@@ -133,6 +149,76 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           const SizedBox(height: 22),
+          const Center(child: OrnateLabel('開発')),
+          const SizedBox(height: 12),
+          OrnatePanel(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text(
+                            '開発者モード',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            '動作確認のために、値を直接いじれるようにします',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: AppColors.textMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: state.devMode,
+                      activeThumbColor: AppColors.rose,
+                      onChanged: (v) => _edit(() => state.devMode = v),
+                    ),
+                  ],
+                ),
+                if (state.devMode) ...[
+                  const Divider(height: 26, color: AppColors.goldDim),
+                  _devGroup('もちもの', [
+                    ('コイン +100,000', () => state.coins += 100000),
+                    ('鍵 +5', () => state.keys += 5),
+                    ('チケット +10', () => state.tickets += 10),
+                  ]),
+                  _devGroup('みんな', [
+                    ('レベル20・親密度MAX', _maxOrgans),
+                    ('健康度を100に', () => _setHealth(100)),
+                    ('健康度を20に', () => _setHealth(20)),
+                  ]),
+                  _devGroup('すすみ', [
+                    ('ステージ +1', () => state.clearedStage += 1),
+                    (
+                      'ステージ -1',
+                      () => state.clearedStage = (state.clearedStage - 1).clamp(
+                        0,
+                        1 << 30,
+                      ),
+                    ),
+                    ('1日すすめる', () => state.endDay()),
+                  ]),
+                  _devGroup('よみもの', [
+                    ('全部を既読にする', _readAll),
+                    ('既読を消す', () => state.readEpisodes.clear()),
+                    ('案内をもう一度', () => state.tutorialPhase = 0),
+                  ]),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 22),
           const Center(child: OrnateLabel('そのほか')),
           const SizedBox(height: 12),
           OrnatePanel(
@@ -170,10 +256,91 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  /// 全員をレベル上限まで上げ、ハートも満たす。演出の確認用。
+  void _maxOrgans() {
+    for (final organ in kOrgans) {
+      final status = state.statusOf(organ.id);
+      state.organs[organ.id] = OrganStatus(
+        health: status.health,
+        level: 20,
+        ascensions: 1,
+        affection: OrganStatus.heartThresholds[OrganStatus.maxHearts],
+      );
+    }
+  }
+
+  void _setHealth(int health) {
+    for (final organ in kOrgans) {
+      final status = state.statusOf(organ.id);
+      state.organs[organ.id] = OrganStatus(
+        health: health,
+        level: status.level,
+        ascensions: status.ascensions,
+        affection: status.affection,
+      );
+    }
+  }
+
+  void _readAll() {
+    state.readEpisodes
+      ..addAll(kStory.map((e) => e.key))
+      ..addAll(kCharaStory.map((e) => e.key));
+  }
+
+  Widget _devGroup(String title, List<(String, VoidCallback)> actions) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w900,
+              color: AppColors.gold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final (label, run) in actions)
+                GestureDetector(
+                  onTap: () => _edit(run),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.hollow,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: AppColors.goldDim.withValues(alpha: 0.6),
+                      ),
+                    ),
+                    child: Text(
+                      label,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _speedChip(BattleSpeed speed) {
     final selected = state.battleSpeed == speed;
     return GestureDetector(
-      onTap: () => setState(() => state.battleSpeed = speed),
+      onTap: () => _edit(() => state.battleSpeed = speed),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10),
         alignment: Alignment.center,
