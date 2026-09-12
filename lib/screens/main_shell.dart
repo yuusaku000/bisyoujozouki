@@ -5,6 +5,7 @@ import '../models/game_state.dart';
 import '../services/save_store.dart';
 import '../services/step_source.dart';
 import 'battle_screen.dart';
+import 'boot_screen.dart';
 import 'grow_tab.dart';
 import 'home_tab.dart';
 import 'gacha_tab.dart';
@@ -42,7 +43,30 @@ class _MainShellState extends State<MainShell> {
     final auto = await _stepSource.readToday();
     if (auto != null) state.today = auto;
     if (!mounted) return;
+
+    await _warmUp(state);
+    if (!mounted) return;
     setState(() => _state = state);
+  }
+
+  /// 最初に出る画面の絵を先に読んでおく。
+  ///
+  /// 立ち絵は1枚1MB近くある。読み込みながら出すと、背景だけの画面に
+  /// 子が後から現れることになり、できあがっていないように見える。
+  Future<void> _warmUp(GameState state) async {
+    final paths = <String>{
+      'assets/bg/bg_home.png',
+      for (final organ in state.party) ...[
+        organ.imagePath(state.statusOf(organ.id).condition),
+        organ.facePath(state.statusOf(organ.id).condition),
+      ],
+    };
+
+    await Future.wait([
+      for (final path in paths)
+        // 1枚読めなくても先へ進める。ここで止まると何も遊べない。
+        precacheImage(AssetImage(path), context, onError: (_, _) {}),
+    ]);
   }
 
   /// どのタブから変更しても、同じ道を通して保存する。
@@ -90,11 +114,7 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     final state = _state;
-    if (state == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator(color: AppColors.rose)),
-      );
-    }
+    if (state == null) return const BootScreen();
 
     return Stack(
       children: [
