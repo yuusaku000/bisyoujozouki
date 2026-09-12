@@ -376,7 +376,7 @@ class _HomeTabState extends State<HomeTab> {
                           fit: BoxFit.contain,
                         ),
                       ),
-                      Positioned(top: 10, right: 12, child: _vitalCard(status)),
+                      Positioned(top: 2, right: 4, child: _vitalCard(status)),
                       _speechBubble(status),
                     ],
                   ),
@@ -590,8 +590,8 @@ class _HomeTabState extends State<HomeTab> {
     final vitals = kVitals.read(_organ, status, state.dayCount);
 
     return Container(
-      constraints: const BoxConstraints(maxWidth: 124),
-      padding: const EdgeInsets.fromLTRB(11, 9, 11, 7),
+      constraints: const BoxConstraints(maxWidth: 102),
+      padding: const EdgeInsets.fromLTRB(9, 7, 9, 6),
       decoration: BoxDecoration(
         color: AppColors.hollow.withValues(alpha: 0.82),
         borderRadius: BorderRadius.circular(14),
@@ -612,7 +612,7 @@ class _HomeTabState extends State<HomeTab> {
                 Text(
                   vital.value,
                   style: TextStyle(
-                    fontSize: 17,
+                    fontSize: 15,
                     fontWeight: FontWeight.w900,
                     height: 1.15,
                     color: vital.inRange
