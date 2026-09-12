@@ -433,6 +433,7 @@ class _GrowTabState extends State<GrowTab> {
                       : QuietButton(
                           label: formatCoins(status.levelUpCost()),
                           icon: Icons.arrow_upward,
+                          coin: true,
                           onPressed: state.canLevelUp(organ.id)
                               ? () => _levelUp(organ)
                               : null,

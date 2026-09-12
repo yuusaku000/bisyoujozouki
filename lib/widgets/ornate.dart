@@ -237,12 +237,16 @@ class QuietButton extends StatelessWidget {
     required this.onPressed,
     this.icon,
     this.height = 48,
+    this.coin = false,
   });
 
   final String label;
   final VoidCallback? onPressed;
   final IconData? icon;
   final double height;
+
+  /// 数字の前にコインの印を出す。何を払うのかが数字だけでは分からない。
+  final bool coin;
 
   @override
   Widget build(BuildContext context) {
@@ -271,6 +275,10 @@ class QuietButton extends StatelessWidget {
                   if (icon != null) ...[
                     Icon(icon, size: 16, color: AppColors.gold),
                     const SizedBox(width: 7),
+                  ],
+                  if (coin) ...[
+                    const Icon(Icons.circle, size: 11, color: AppColors.gold),
+                    const SizedBox(width: 5),
                   ],
                   Flexible(
                     child: Text(

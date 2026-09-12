@@ -413,10 +413,13 @@ class _Spotlight extends CustomPainter {
   final Rect? hole;
   final double pulse;
 
+  /// 外側の暗さ。ここが薄いと、穴を開けても差が出ない。
+  static const Color _shade = Color(0xE60A050B);
+
   @override
   void paint(Canvas canvas, Size size) {
     final screen = Offset.zero & size;
-    final shade = Paint()..color = const Color(0xD9090409);
+    final shade = Paint()..color = _shade;
 
     if (hole == null) {
       canvas.drawRect(screen, shade);
@@ -424,13 +427,26 @@ class _Spotlight extends CustomPainter {
     }
 
     final rrect = RRect.fromRectAndRadius(hole!, const Radius.circular(14));
-    canvas.drawPath(
-      Path.combine(
-        PathOperation.difference,
-        Path()..addRect(screen),
-        Path()..addRRect(rrect),
-      ),
-      shade,
+
+    // 一枚のレイヤーに暗幕を塗ってから、指した場所だけ消す。
+    //
+    // Path.combine で穴を開けていたが、web では効かず暗幕ごと消えていた。
+    // 枠だけが浮いて、肝心の中身は暗いままだった。
+    canvas.saveLayer(screen, Paint());
+    canvas.drawRect(screen, shade);
+    canvas.drawRRect(rrect, Paint()..blendMode = BlendMode.clear);
+    canvas.restore();
+
+    // 穴の中に光を足す。コインの丸のように、部品そのものが暗い場所がある。
+    // 暗幕をどけるだけでは読めないので、明るさを持ち込む。
+    canvas.drawRRect(
+      rrect,
+      Paint()
+        ..color = Color.lerp(
+          const Color(0x1FFFF0F6),
+          const Color(0x33FFF0F6),
+          pulse,
+        )!,
     );
 
     // 枠を脈打たせる。暗いだけだと、どこが穴なのか分かりにくい。
