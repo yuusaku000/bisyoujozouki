@@ -10,7 +10,9 @@ import '../models/organ.dart';
 import '../widgets/coin_text.dart';
 import '../widgets/health_bar.dart';
 import '../widgets/ornate.dart';
+import '../data/achievements.dart';
 import '../models/vitals.dart';
+import 'achievements_screen.dart';
 import '../widgets/today_clock.dart';
 import 'vitals_screen.dart';
 import 'tutorial.dart';
@@ -104,6 +106,37 @@ class _HomeTabState extends State<HomeTab> {
         icon: Icons.auto_stories,
       );
     }
+  }
+
+  /// 受け取れる達成があるときだけ印をつける。押す理由が分かるように。
+  Widget _trophyButton() {
+    final ready = claimable(state).isNotEmpty;
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        IconButton(
+          onPressed: _openAchievements,
+          icon: const Icon(
+            Icons.emoji_events_outlined,
+            color: AppColors.textMuted,
+          ),
+        ),
+        if (ready)
+          const Positioned(top: 6, right: 6, child: UnreadDot(size: 9)),
+      ],
+    );
+  }
+
+  Future<void> _openAchievements() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            AchievementsScreen(state: state, onChanged: widget.onChanged),
+      ),
+    );
+    if (mounted) setState(() {});
   }
 
   /// 設定で変えた値も保存する。戻ってきてから通すのを忘れると、
@@ -409,6 +442,7 @@ class _HomeTabState extends State<HomeTab> {
           ),
           const Spacer(),
           _mark(widget.anchors?.story, _storyButton()),
+          _trophyButton(),
           IconButton(
             onPressed: _openSettings,
             icon: const Icon(Icons.settings, color: AppColors.textMuted),

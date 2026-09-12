@@ -65,8 +65,17 @@ class GameState {
     this.battleSpeed = BattleSpeed.normal,
     this.tutorialPhase = 0,
     this.devMode = false,
+    this.totalSteps = 0,
     Map<String, List<int>>? healthLog,
-  }) : healthLog = healthLog ?? <String, List<int>>{};
+    Set<String>? claimedAchievements,
+  }) : healthLog = healthLog ?? <String, List<int>>{},
+       claimedAchievements = claimedAchievements ?? <String>{};
+
+  /// 合わせて何歩あるいたか。1日を締めるたびに足す。
+  int totalSteps;
+
+  /// 受け取り済みの達成。報酬を二度渡さないために持つ。
+  final Set<String> claimedAchievements;
 
   /// 臓器ごとの健康度の記録。1日を締めるたびに後ろへ足す。
   ///
@@ -281,6 +290,8 @@ class GameState {
       tickets += m.reward.tickets;
     }
 
+    totalSteps += today.steps;
+
     final earned = today.coinsFor(stepGoal);
 
     coins += earned.total;
@@ -338,6 +349,8 @@ class GameState {
     'battleSpeed': battleSpeed.name,
     'tutorialPhase': tutorialPhase,
     'healthLog': healthLog,
+    'totalSteps': totalSteps,
+    'claimedAchievements': claimedAchievements.toList(),
     'devMode': devMode,
     'inventory': inventory,
     'pullsSinceSsr': pullsSinceSsr,
@@ -372,6 +385,11 @@ class GameState {
           .map((e) => e as String)
           .toList(),
       // 以前は見たかどうかの真偽値だけだった。見終えていれば最後まで進める。
+      totalSteps: map['totalSteps'] as int? ?? 0,
+      claimedAchievements:
+          ((map['claimedAchievements'] as List<dynamic>?) ?? const [])
+              .map((e) => e as String)
+              .toSet(),
       healthLog: {
         for (final entry
             in ((map['healthLog'] as Map<String, dynamic>?) ?? const {})
