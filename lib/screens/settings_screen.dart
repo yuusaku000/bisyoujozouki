@@ -29,6 +29,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
   GameState get state => widget.state;
 
   /// 設定で触った値はその場で保存する。まとめて後で、だと取りこぼす。
+  Widget _soundRow(
+    String title,
+    String detail,
+    bool value,
+    void Function(bool) set,
+  ) {
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                detail,
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: AppColors.textMuted,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Switch(
+          value: value,
+          activeThumbColor: AppColors.rose,
+          onChanged: (v) => _edit(() => set(v)),
+        ),
+      ],
+    );
+  }
+
   void _edit(VoidCallback change) {
     setState(change);
     widget.onChanged();
@@ -129,6 +168,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ],
                   ],
                 ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 22),
+          const Center(child: OrnateLabel('おと')),
+          const SizedBox(height: 12),
+          OrnatePanel(
+            child: Column(
+              children: [
+                _soundRow(
+                  '効果音',
+                  'つついたとき、戦っているときの音',
+                  state.sfxOn,
+                  (v) => state.sfxOn = v,
+                ),
+                const Divider(height: 22, color: AppColors.goldDim),
+                _soundRow('BGM', '流れつづける曲', state.bgmOn, (v) => state.bgmOn = v),
               ],
             ),
           ),

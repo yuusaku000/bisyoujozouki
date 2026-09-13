@@ -1,10 +1,13 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
 
 import '../data/organs.dart';
+import '../data/sounds.dart';
 import '../data/theme.dart';
 import '../models/present.dart';
+import '../services/audio.dart';
 
 /// 演出の種類。引くたびに変わる。
 ///
@@ -29,10 +32,18 @@ class GachaReveal extends StatefulWidget {
 
 class _GachaRevealState extends State<GachaReveal>
     with SingleTickerProviderStateMixin {
+  static const Duration _length = Duration(milliseconds: 2400);
+
+  /// 中身が見えはじめる時点。_amplitudeAt がここまで平らなので、
+  /// 音もここに合わせないと、何もしていないところで鳴ってしまう。
+  static const double _revealAt = 0.55;
+
   late final AnimationController _controller = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 2400),
+    duration: _length,
   );
+
+  Timer? _revealSound;
 
   final _seed = Random().nextInt(1 << 30);
   late final RevealKind _kind =
@@ -59,6 +70,11 @@ class _GachaRevealState extends State<GachaReveal>
   @override
   void initState() {
     super.initState();
+    Audio.instance.playSfx(Sfx.gacha);
+    _revealSound = Timer(
+      _length * _revealAt,
+      () => Audio.instance.playSfx(Sfx.reveal),
+    );
     _controller.forward().whenComplete(() {
       if (mounted) Navigator.pop(context);
     });
@@ -66,20 +82,23 @@ class _GachaRevealState extends State<GachaReveal>
 
   @override
   void dispose() {
+    _revealSound?.cancel();
     _controller.dispose();
     super.dispose();
   }
 
   /// 終盤まではどれも同じ大きさ。最初から大きいと、見る前に分かってしまう。
   double _amplitudeAt(double t) {
-    if (t < 0.55) return 1.0;
-    final grow = Curves.easeOutCubic.transform(((t - 0.55) / 0.35).clamp(0, 1));
+    if (t < _revealAt) return 1.0;
+    final grow = Curves.easeOutCubic.transform(
+      ((t - _revealAt) / 0.35).clamp(0, 1),
+    );
     return 1 + (_peak - 1) * grow;
   }
 
   Color _colorAt(double t) {
-    if (t < 0.55) return _base;
-    final reveal = ((t - 0.55) / 0.3).clamp(0.0, 1.0);
+    if (t < _revealAt) return _base;
+    final reveal = ((t - _revealAt) / 0.3).clamp(0.0, 1.0);
     return Color.lerp(_base, widget.best.color, reveal)!;
   }
 

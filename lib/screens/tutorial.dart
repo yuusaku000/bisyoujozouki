@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../data/organs.dart';
+import '../data/sounds.dart';
 import '../data/theme.dart';
 import '../models/organ.dart';
+import '../services/audio.dart';
 
 /// はじめて開いた瞬間。説明より先に、一戦させる。
 ///
@@ -32,6 +34,7 @@ class _IntroOverlayState extends State<IntroOverlay> {
   int _index = 0;
 
   void _next() {
+    Audio.instance.playSfx(Sfx.page);
     if (_index == _lines.length - 1) {
       widget.onBattle();
       return;
@@ -230,6 +233,7 @@ class _TutorialOverlayState extends State<TutorialOverlay>
   }
 
   void _next() {
+    Audio.instance.playSfx(Sfx.page);
     if (_isLast) {
       widget.onDone();
       return;

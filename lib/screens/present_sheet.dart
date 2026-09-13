@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../data/sounds.dart';
 import '../data/theme.dart';
+import '../services/audio.dart';
 import '../models/game_state.dart';
 import '../models/organ.dart';
 import '../models/present.dart';
@@ -107,6 +109,7 @@ class PresentSheet extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
         onTap: () {
+          Audio.instance.playSfx(Sfx.confirm);
           state.givePresent(organ.id, present);
           Navigator.pop(
             context,

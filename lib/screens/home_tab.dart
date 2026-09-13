@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 
 import '../data/lines.dart';
 import '../data/organs.dart';
+import '../data/sounds.dart';
 import '../data/story.dart';
 import '../data/theme.dart';
 import '../models/daily_input.dart';
 import '../models/game_state.dart';
 import '../models/organ.dart';
+import '../services/audio.dart';
 import '../widgets/coin_text.dart';
 import '../widgets/health_bar.dart';
 import '../widgets/ornate.dart';
@@ -130,6 +132,7 @@ class _HomeTabState extends State<HomeTab> with WidgetsBindingObserver {
     );
     if (input == null || !mounted) return;
 
+    Audio.instance.playSfx(Sfx.confirm);
     state.today = input;
     final result = state.endDay();
     widget.onChanged();
@@ -513,7 +516,10 @@ class _HomeTabState extends State<HomeTab> with WidgetsBindingObserver {
               _mark(widget.anchors?.today, _todayLine()),
               Expanded(
                 child: GestureDetector(
-                  onTap: () => setState(() => _talkCount++),
+                  onTap: () {
+                    Audio.instance.playSfx(Sfx.tap);
+                    setState(() => _talkCount++);
+                  },
                   behavior: HitTestBehavior.opaque,
                   child: Stack(
                     alignment: Alignment.bottomCenter,
@@ -843,10 +849,13 @@ class _HomeTabState extends State<HomeTab> with WidgetsBindingObserver {
           final selected = i == _selected;
           final condition = state.statusOf(organ.id).condition;
           return GestureDetector(
-            onTap: () => setState(() {
-              _selected = i;
-              _talkCount = 0;
-            }),
+            onTap: () {
+              Audio.instance.playSfx(Sfx.tap);
+              setState(() {
+                _selected = i;
+                _talkCount = 0;
+              });
+            },
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [

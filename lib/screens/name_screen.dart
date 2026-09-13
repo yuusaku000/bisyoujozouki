@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../data/sounds.dart';
 import '../data/theme.dart';
 import '../models/game_state.dart';
+import '../services/audio.dart';
 import '../widgets/ornate.dart';
 
 /// はじめに一度だけ、呼び名を聞く。
@@ -31,6 +33,9 @@ class _NameScreenState extends State<NameScreen> {
 
   void _decide() {
     if (_name.isEmpty) return;
+    // ここが最初に触られる場所。ブラウザの「音は触るまで鳴らさない」を
+    // 解くきっかけにもなるので、無音にしない。
+    Audio.instance.playSfx(Sfx.confirm);
     widget.onDecided(_name);
   }
 

@@ -3,10 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../data/enemies.dart';
+import '../data/sounds.dart';
 import '../data/theme.dart';
 import '../models/battle.dart';
 import '../models/game_state.dart';
 import '../models/organ.dart';
+import '../services/audio.dart';
 import '../widgets/ornate.dart';
 
 /// 自動戦闘を1行ずつ再生する。結果は開始時点で確定している。
@@ -37,6 +39,7 @@ class _BattleScreenState extends State<BattleScreen> {
   @override
   void initState() {
     super.initState();
+    Audio.instance.playBgm(Bgm.battle);
     _partyHp = _result.partyMaxHp;
     _enemyHp = _result.enemyMaxHp;
     _timer = Timer.periodic(
@@ -50,11 +53,24 @@ class _BattleScreenState extends State<BattleScreen> {
         setState(() {
           final event = _result.log[_shown];
           _applyToBars(event);
+          _playHit(event);
           _shown++;
         });
         _scrollToEnd();
       },
     );
+  }
+
+  /// 当たった音。ログが流れるだけだと、何が起きているか耳に残らない。
+  ///
+  /// 1行ごとに鳴らすと連打になるので、相手を削った一撃だけにする。
+  /// 止めの一撃は重い音に変えて、終わりが聞いて分かるようにする。
+  void _playHit(BattleEvent event) {
+    final damage = event.damage;
+    if (damage == null) return;
+    final toEnemy = event.actorId != null || event.text.startsWith('継続');
+    if (!toEnemy) return;
+    Audio.instance.playSfx(_enemyHp <= 0 ? Sfx.heavy : Sfx.hit);
   }
 
   /// バーの動きはログの再生に合わせる。どの一撃で削れたのかが見えるように。
@@ -82,8 +98,13 @@ class _BattleScreenState extends State<BattleScreen> {
 
   StageReward _reward = const StageReward();
 
+  bool _finished = false;
+
   void _finish() {
+    if (_finished) return;
+    _finished = true;
     if (_result.won) _reward = widget.state.clearStage(_stage);
+    Audio.instance.playSfx(_result.won ? Sfx.win : Sfx.lose);
     setState(() {});
   }
 
@@ -99,6 +120,7 @@ class _BattleScreenState extends State<BattleScreen> {
 
   @override
   void dispose() {
+    Audio.instance.playBgm(Bgm.home);
     _timer?.cancel();
     _scroll.dispose();
     super.dispose();

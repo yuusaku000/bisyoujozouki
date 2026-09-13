@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../data/sounds.dart';
 import '../data/theme.dart';
+import '../services/audio.dart';
 import '../models/game_state.dart';
 import '../services/save_store.dart';
 import '../services/step_source.dart';
@@ -47,6 +49,12 @@ class _MainShellState extends State<MainShell> {
 
     await _warmUp(state);
     if (!mounted) return;
+
+    // 曲は「流したい」とだけ伝えておく。ブラウザは画面を触るまで
+    // 鳴らしてくれないので、実際に始まるのは最初のタップのとき。
+    Audio.instance.apply(sfx: state.sfxOn, bgm: state.bgmOn);
+    Audio.instance.playBgm(Bgm.home);
+
     setState(() => _state = state);
   }
 
@@ -74,7 +82,9 @@ class _MainShellState extends State<MainShell> {
   void _changed() {
     setState(() {});
     final state = _state;
-    if (state != null) _store.save(state);
+    if (state == null) return;
+    Audio.instance.apply(sfx: state.sfxOn, bgm: state.bgmOn);
+    _store.save(state);
   }
 
   Future<void> _reset() async {

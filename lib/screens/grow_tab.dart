@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../data/lines.dart';
+import '../data/sounds.dart';
 import '../data/theme.dart';
 import '../models/game_state.dart';
 import '../models/organ.dart';
+import '../services/audio.dart';
 import '../widgets/coin_text.dart';
 import '../widgets/health_bar.dart';
 import '../widgets/ornate.dart';
@@ -50,6 +52,7 @@ class _GrowTabState extends State<GrowTab> {
 
   void _levelUp(Organ organ) {
     if (!state.canLevelUp(organ.id)) return;
+    Audio.instance.playSfx(Sfx.levelUp);
     state.levelUp(organ.id);
     widget.onChanged();
     _say(levelUpLine(organ.id, state.statusOf(organ.id).level));
@@ -57,6 +60,8 @@ class _GrowTabState extends State<GrowTab> {
 
   Future<void> _ascend(Organ organ) async {
     if (!state.canAscend(organ.id)) return;
+    // 鍵を使い切る一度きりの節目なので、重い音にする。
+    Audio.instance.playSfx(Sfx.heavy);
     state.ascend(organ.id);
     widget.onChanged();
 
@@ -90,6 +95,7 @@ class _GrowTabState extends State<GrowTab> {
 
     final after = state.statusOf(organ.id).hearts;
     if (after > before) {
+      Audio.instance.playSfx(Sfx.heart);
       await Navigator.push(
         context,
         PageRouteBuilder<void>(

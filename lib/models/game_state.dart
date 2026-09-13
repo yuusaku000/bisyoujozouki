@@ -77,6 +77,8 @@ class GameState {
     this.battleSpeed = BattleSpeed.normal,
     this.tutorialPhase = 0,
     this.devMode = false,
+    this.sfxOn = true,
+    this.bgmOn = true,
     this.userName = '',
     this.avatarId = 'organ:heart',
     this.totalSteps = 0,
@@ -120,6 +122,11 @@ class GameState {
 
   /// 開発者モード。動作確認のために数値を直接いじれるようにする。
   bool devMode;
+
+  /// 効果音と曲。どちらも最初は鳴る側にしておく。
+  /// 音のあるゲームだと気づかれないまま切られているのが、いちばん惜しい。
+  bool sfxOn;
+  bool bgmOn;
 
   factory GameState.fresh() => GameState(
     coins: 0,
@@ -391,6 +398,8 @@ class GameState {
     'totalSteps': totalSteps,
     'claimedAchievements': claimedAchievements.toList(),
     'devMode': devMode,
+    'sfxOn': sfxOn,
+    'bgmOn': bgmOn,
     'inventory': inventory,
     'pullsSinceSsr': pullsSinceSsr,
   });
@@ -441,6 +450,8 @@ class GameState {
           map['tutorialPhase'] as int? ??
           ((map['tutorialDone'] as bool? ?? false) ? 2 : 0),
       devMode: map['devMode'] as bool? ?? false,
+      sfxOn: map['sfxOn'] as bool? ?? true,
+      bgmOn: map['bgmOn'] as bool? ?? true,
       battleSpeed: BattleSpeed.values.firstWhere(
         (s) => s.name == map['battleSpeed'],
         orElse: () => BattleSpeed.normal,

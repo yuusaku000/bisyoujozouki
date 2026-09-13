@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../data/enemies.dart';
+import '../data/sounds.dart';
 import '../data/organs.dart';
 import '../data/story.dart';
 import '../data/theme.dart';
 import '../models/enemy.dart';
 import '../models/organ.dart';
+import '../services/audio.dart';
 
 /// 1話を読む画面。タップで1行ずつ進む。
 class StoryScreen extends StatefulWidget {
@@ -49,9 +51,11 @@ class _StoryScreenState extends State<StoryScreen> {
 
   void _advance() {
     if (_isLast) {
+      Audio.instance.playSfx(Sfx.back);
       Navigator.pop(context);
       return;
     }
+    Audio.instance.playSfx(Sfx.page);
     setState(() => _index++);
     if (_isLast) _markRead();
   }
