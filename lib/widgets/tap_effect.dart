@@ -156,19 +156,19 @@ class _BurstPainter extends CustomPainter {
   void _flash(Canvas canvas, Offset at, double spread, double fade) {
     final paint = Paint()
       ..color = AppColors.rose.withValues(alpha: 0.5 * fade * (1 - spread))
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 7);
 
-    canvas.drawCircle(at, 16 + 26 * spread, paint);
+    canvas.drawCircle(at, 11 + 17 * spread, paint);
   }
 
   /// 広がる輪。押した場所そのものを指す。
   void _ring(Canvas canvas, Offset at, double spread, double fade) {
     final paint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 4.5 * (1 - spread) + 0.8
+      ..strokeWidth = 3.2 * (1 - spread) + 0.7
       ..color = AppColors.rose.withValues(alpha: fade);
 
-    canvas.drawCircle(at, 10 + 48 * spread, paint);
+    canvas.drawCircle(at, 7 + 31 * spread, paint);
   }
 
   /// 外へ飛ぶ粒。ハートと小さな光を交ぜる。
@@ -178,7 +178,7 @@ class _BurstPainter extends CustomPainter {
     for (var i = 0; i < _sparks; i++) {
       final angle = (burst.seed + i * (360 / _sparks)) * pi / 180;
       // 粒ごとに飛距離を変える。そろっていると輪に見えて、輪と重なる。
-      final reach = 40.0 + (i.isEven ? 18 : 0) + (burst.seed % 9);
+      final reach = 26.0 + (i.isEven ? 12 : 0) + (burst.seed % 7);
       final at = burst.at + Offset(cos(angle), sin(angle)) * spread * reach;
 
       final heart = i.isEven;
@@ -187,9 +187,9 @@ class _BurstPainter extends CustomPainter {
       );
 
       if (heart) {
-        _heart(canvas, at, 9 * (1 - spread * 0.45), paint);
+        _heart(canvas, at, 6 * (1 - spread * 0.45), paint);
       } else {
-        canvas.drawCircle(at, 3.4 * (1 - spread * 0.55), paint);
+        canvas.drawCircle(at, 2.3 * (1 - spread * 0.55), paint);
       }
     }
   }
