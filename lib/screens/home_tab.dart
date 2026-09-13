@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../data/lines.dart';
@@ -47,13 +49,57 @@ class HomeTab extends StatefulWidget {
   State<HomeTab> createState() => _HomeTabState();
 }
 
-class _HomeTabState extends State<HomeTab> {
+class _HomeTabState extends State<HomeTab> with WidgetsBindingObserver {
   int _selected = 0;
 
   /// タップするたびに別のことを言わせるための数。
   int _talkCount = 0;
 
+  /// いまがいつか。セリフの一言目がこれで決まる。
+  TimeBand _band = bandAt(DateTime.now());
+  Timer? _bandTimer;
+
   GameState get state => widget.state;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _scheduleBandChange();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _bandTimer?.cancel();
+    super.dispose();
+  }
+
+  /// 開いたまま日が暮れることもある。時間帯が変わる瞬間に起こす。
+  void _scheduleBandChange() {
+    _bandTimer?.cancel();
+    final now = DateTime.now();
+    _bandTimer = Timer(nextBandChange(now).difference(now), _refreshBand);
+  }
+
+  /// 閉じているあいだタイマーは進まない。戻ってきたら見直す。
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState lifecycle) {
+    if (lifecycle == AppLifecycleState.resumed) _refreshBand();
+  }
+
+  void _refreshBand() {
+    if (!mounted) return;
+    final band = bandAt(DateTime.now());
+    if (band != _band) {
+      // つついた数を戻して、変わった時間帯の一言から始める。
+      setState(() {
+        _band = band;
+        _talkCount = 0;
+      });
+    }
+    _scheduleBandChange();
+  }
 
   Organ get _organ {
     final party = state.party;
@@ -640,10 +686,15 @@ class _HomeTabState extends State<HomeTab> {
   }
 
   Widget _speechBubble(OrganStatus status) {
-    final text = lineFor(
-      _organ.id,
-      status.condition,
-      state.dayCount + _talkCount,
+    final text = storyText(
+      lineFor(
+        _organ.id,
+        status.condition,
+        _band,
+        day: state.dayCount,
+        taps: _talkCount,
+      ),
+      state.userName,
     );
 
     return Padding(

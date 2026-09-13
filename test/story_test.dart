@@ -24,19 +24,120 @@ void main() {
       }
     });
 
+    test('全臓器・全時間帯にセリフがある', () {
+      for (final organ in kOrgans) {
+        for (final band in TimeBand.values) {
+          final lines = kTimeLines[organ.id]?[band];
+          expect(
+            lines,
+            isNotNull,
+            reason: '${organ.name}の${band.label}のセリフが無い',
+          );
+          expect(lines, isNotEmpty);
+        }
+      }
+    });
+
     test('タップするたびに別のセリフになる', () {
       final seen = <String>{};
       for (var i = 0; i < 4; i++) {
-        seen.add(lineFor('heart', Condition.genki, i));
+        seen.add(
+          lineFor('heart', Condition.genki, TimeBand.asa, day: 0, taps: i),
+        );
       }
       expect(seen.length, greaterThan(1));
     });
 
     test('同じ日に開き直しても同じセリフ', () {
       expect(
-        lineFor('heart', Condition.genki, 7),
-        lineFor('heart', Condition.genki, 7),
+        lineFor('heart', Condition.genki, TimeBand.asa, day: 7, taps: 0),
+        lineFor('heart', Condition.genki, TimeBand.asa, day: 7, taps: 0),
       );
+    });
+  });
+
+  group('時間帯', () {
+    test('境目で切り替わる', () {
+      TimeBand at(int hour) => bandAt(DateTime(2026, 9, 14, hour));
+
+      expect(at(0), TimeBand.shinya);
+      expect(at(4), TimeBand.shinya);
+      expect(at(5), TimeBand.asa);
+      expect(at(10), TimeBand.asa);
+      expect(at(11), TimeBand.hiru);
+      expect(at(16), TimeBand.hiru);
+      expect(at(17), TimeBand.yoru);
+      expect(at(22), TimeBand.yoru);
+      expect(at(23), TimeBand.shinya);
+    });
+
+    test('次に変わる時刻を返す', () {
+      expect(
+        nextBandChange(DateTime(2026, 9, 14, 13, 20)),
+        DateTime(2026, 9, 14, 17),
+      );
+      expect(
+        nextBandChange(DateTime(2026, 9, 14, 2, 5)),
+        DateTime(2026, 9, 14, 5),
+      );
+    });
+
+    test('深夜は翌朝まで待つ。月をまたいでもずれない', () {
+      expect(
+        nextBandChange(DateTime(2026, 1, 31, 23, 30)),
+        DateTime(2026, 2, 1, 5),
+      );
+    });
+
+    test('時間帯が違えば一言目も違う', () {
+      for (final organ in kOrgans) {
+        final first = {
+          for (final band in TimeBand.values)
+            lineFor(organ.id, Condition.genki, band, day: 0, taps: 0),
+        };
+        expect(
+          first.length,
+          TimeBand.values.length,
+          reason: '${organ.name}が、どこかの時間帯で同じことを言っている',
+        );
+      }
+    });
+
+    test('元気なときは、いまの時間の話から始まる', () {
+      final line = lineFor(
+        'heart',
+        Condition.genki,
+        TimeBand.shinya,
+        day: 0,
+        taps: 0,
+      );
+      expect(kTimeLines['heart']![TimeBand.shinya], contains(line));
+    });
+
+    test('不調のときは、体調の話から始まる', () {
+      // 弱っている日に時間の挨拶から入ると、伝えたいことが後ろに回る
+      final line = lineFor(
+        'heart',
+        Condition.fuchou,
+        TimeBand.asa,
+        day: 0,
+        taps: 0,
+      );
+      expect(kOrganLines['heart']![Condition.fuchou], contains(line));
+    });
+
+    test('つつけば、どちらの話も出てくる', () {
+      final seen = <String>{};
+      for (var taps = 0; taps < 12; taps++) {
+        seen.add(
+          lineFor('heart', Condition.genki, TimeBand.asa, day: 0, taps: taps),
+        );
+      }
+
+      final timed = kTimeLines['heart']![TimeBand.asa]!;
+      final byCondition = kOrganLines['heart']![Condition.genki]!;
+      expect(seen.any(timed.contains), isTrue);
+      expect(seen.any(byCondition.contains), isTrue);
     });
   });
 

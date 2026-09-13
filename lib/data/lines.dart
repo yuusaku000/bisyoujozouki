@@ -1,5 +1,79 @@
 import '../models/organ.dart';
 
+/// 一日のどのあたりか。ホームのセリフを変えるための区切り。
+///
+/// 深夜だけはっきり分けてあるのは、このゲームが積み重ねと戦う話だから。
+/// 「まだ起きてるの」は、この子たちに言われていちばん効く一言になる。
+enum TimeBand {
+  asa('朝'), // 5:00〜10:59
+  hiru('昼'), // 11:00〜16:59
+  yoru('夜'), // 17:00〜22:59
+  shinya('深夜'); // 23:00〜4:59
+
+  const TimeBand(this.label);
+
+  final String label;
+}
+
+TimeBand bandAt(DateTime now) {
+  final hour = now.hour;
+  // 深夜が日付をまたぐので、先に0時台を拾う。後ろに回すと午前2時が昼になる。
+  if (hour < 5) return TimeBand.shinya;
+  if (hour < 11) return TimeBand.asa;
+  if (hour < 17) return TimeBand.hiru;
+  if (hour < 23) return TimeBand.yoru;
+  return TimeBand.shinya;
+}
+
+/// 次に時間帯が変わる瞬間。画面を開いたままでも言葉が切り替わるように、
+/// ここまで待ってから起こす。1分ごとに見に行くより無駄がない。
+DateTime nextBandChange(DateTime now) {
+  for (final hour in [5, 11, 17, 23]) {
+    if (now.hour < hour) return DateTime(now.year, now.month, now.day, hour);
+  }
+  return DateTime(now.year, now.month, now.day + 1, 5);
+}
+
+/// 時間帯ごとのセリフ。開いた直後に出るのはこちら。
+///
+/// 体調の言葉と違って、こちらは「いま何時か」しか見ていない。
+/// 朝に「おかえり」と言われると、それだけで作り物に見える。
+const Map<String, Map<TimeBand, List<String>>> kTimeLines = {
+  'heart': {
+    TimeBand.asa: ['おはよ。わたしはとっくに働いてるよ。', 'よく寝たね。いま、すごくいい速さで打ってる。'],
+    TimeBand.hiru: ['お昼どき。ちょっと歩かない？　鈍っちゃうよ。', '{name}、さっきからずっと座ってない？'],
+    TimeBand.yoru: ['おかえり。今日、どれくらい歩いた？', '一日おつかれさま。……ちゃんと見てたよ、わたし。'],
+    TimeBand.shinya: ['まだ起きてるの。……わたしも起きてるけどさ。', 'こんな時間。速くなってるの、自分で分かる？'],
+  },
+  'lung': {
+    TimeBand.asa: ['おはようございます。朝の空気、すこし冷たいですね。', '今日いちばん最初の一息、いただきました。'],
+    TimeBand.hiru: ['窓、開けませんか。空気が止まっています。', '深呼吸ひとつ、どうですか。すぐ終わりますから。'],
+    TimeBand.yoru: ['今日はよく動きましたね。息が、深いです。', '一日の終わりに、大きく吐いてください。'],
+    TimeBand.shinya: ['……こんな時間まで。息、浅くなっていますよ。', '夜の空気は静かですね。……でも、そろそろ。'],
+  },
+  'stomach': {
+    TimeBand.asa: ['おはよー！　朝ごはん、なに食べる？', 'からっぽだよー。なんか入れて？'],
+    TimeBand.hiru: ['おなかすいた！　……あ、まだ？', 'お昼はちゃんと食べてね。抜くと夜がつらいから。'],
+    TimeBand.yoru: ['夜ごはんの時間！　今日はなに？', '夜は軽めがうれしいな。重いと、{name}が寝れないの。'],
+    TimeBand.shinya: ['夜中に食べるの、だめだからね。……ぜったい。', 'こんな時間に鳴ったら、それ、ほんとの空腹じゃないよ。'],
+  },
+  'liver': {
+    TimeBand.asa: ['おはようございます。夜のぶんは処理し終えました。', '朝の報告です。異常ありません。'],
+    TimeBand.hiru: ['午後です。休憩は取りましたか。', '働きどきですね。無理のない範囲で。'],
+    TimeBand.yoru: ['本日ぶんの記録、まだですね。お待ちしています。', 'そろそろ店じまいです。夜更かしは、ほどほどに。'],
+    TimeBand.shinya: [
+      'この時間は、わたしの仕事が増えます。……お願いします。',
+      '深夜です。追いつかなくなる前に、横になってください。',
+    ],
+  },
+  'brain': {
+    TimeBand.asa: ['おはよう。昨日のぶん、片づけておいたよ。', '起きたての頭は、まだ半分寝てる。ゆっくりでいいよ。'],
+    TimeBand.hiru: ['昼過ぎは、いちばん判断が鈍る時間。大事なことは後にしよ。', '集中が切れたら、それは休めの合図だよ。'],
+    TimeBand.yoru: ['そろそろ片づけを始めたい。{name}が寝てくれたら、だけど。', '今日のこと、棚に並べる準備はできてる。'],
+    TimeBand.shinya: ['そろそろ、わたしの番なんだけど。', '起きてるあいだは、片づけられないんだよ。……ね。'],
+  },
+};
+
 /// 臓器のセリフ。状態によって言うことが変わる。
 ///
 /// 不調のときに責める言い方をしない。罪悪感で開きたくなくなるアプリに
@@ -57,12 +131,33 @@ const Map<String, Map<Condition, List<String>>> kOrganLines = {
   },
 };
 
-/// 日数で変えることで、同じ日に開き直しても同じ言葉が返る。
+/// 開いた直後は、いまの時間に合わせた一言を返す。
+/// つついた回数 [taps] が増えると、その日の調子の話に移る。
+///
+/// 不調のときだけ順番を入れ替える。弱っている日に時間の挨拶から入ると、
+/// いちばん伝えたいことが後ろに回ってしまう。
+///
+/// どちらを選ぶときも [day] で回すので、同じ日に開き直せば同じ言葉が返る。
 /// 気分がころころ変わるより、その日の調子として受け取れるほうがいい。
-String lineFor(String organId, Condition condition, int seed) {
-  final lines = kOrganLines[organId]?[condition];
-  if (lines == null || lines.isEmpty) return '…';
-  return lines[seed.abs() % lines.length];
+String lineFor(
+  String organId,
+  Condition condition,
+  TimeBand band, {
+  required int day,
+  required int taps,
+}) {
+  final timed = kTimeLines[organId]?[band] ?? const <String>[];
+  final byCondition = kOrganLines[organId]?[condition] ?? const <String>[];
+
+  final fuchou = condition == Condition.fuchou;
+  final first = fuchou ? byCondition : timed;
+  final rest = fuchou ? timed : byCondition;
+
+  if (taps == 0 && first.isNotEmpty) return first[day.abs() % first.length];
+
+  final pool = [...first, ...rest];
+  if (pool.isEmpty) return '…';
+  return pool[(day + taps).abs() % pool.length];
 }
 
 /// レベルが上がったときの一言。数字が増えるだけだと手応えが薄い。
