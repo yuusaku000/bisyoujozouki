@@ -31,7 +31,9 @@ class _TapEffectsState extends State<TapEffects>
   /// 一度に残す数。連打されても増え続けないように上限を置く。
   static const int _maxLive = 8;
 
-  static const Duration _life = Duration(milliseconds: 520);
+  /// 出てから消えるまで。押した合図なので、短くていい。
+  /// 長いと、連打したときに前の分が画面に残りつづける。
+  static const Duration _life = Duration(milliseconds: 340);
 
   final List<_Burst> _bursts = [];
   final Random _random = Random();
