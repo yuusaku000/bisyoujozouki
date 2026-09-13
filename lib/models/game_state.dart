@@ -35,6 +35,18 @@ class DayResult {
   final List<Mission> clearedMissions;
 }
 
+/// ステージをひとつ進めたときの取り分。
+///
+/// 勝った直後に何をもらったのかが分からないと、勝ちが手応えにならない。
+class StageReward {
+  const StageReward({this.keys = 0, this.tickets = 0});
+
+  final int keys;
+  final int tickets;
+
+  bool get isEmpty => keys == 0 && tickets == 0;
+}
+
 /// 戦闘ログの送り速度。
 enum BattleSpeed {
   slow('ゆっくり', 620),
@@ -231,16 +243,27 @@ class GameState {
   ///
   /// 報酬でコインを配ると「バトル→コイン→レベル→強くなる」の輪が閉じ、
   /// 歩かなくても強くなれてしまう。強さの源は運動だけに保つ。
-  /// 戻り値は手に入れた鍵の数。ボスだけが落とす。
-  int clearStage(int stage) {
-    if (stage != currentStage) return 0;
+  ///
+  /// チケットは配る。引いた先で手に入るのはプレゼントで、プレゼントが
+  /// 上げるのは親密度だけなので、強さの輪には入らない。
+  /// 同じステージを勝ち直しても出ないので、稼ぎ直しにもならない。
+  StageReward clearStage(int stage) {
+    if (stage != currentStage) return const StageReward();
     clearedStage = stage;
-    if (!enemyForStage(stage).isBoss) return 0;
-    keys += bossKeyDrop;
-    return bossKeyDrop;
+
+    final isBoss = enemyForStage(stage).isBoss;
+    final reward = StageReward(
+      keys: isBoss ? bossKeyDrop : 0,
+      tickets: isBoss ? bossTicketDrop : winTicketDrop,
+    );
+    keys += reward.keys;
+    tickets += reward.tickets;
+    return reward;
   }
 
   static const int bossKeyDrop = 1;
+  static const int winTicketDrop = 1;
+  static const int bossTicketDrop = 5;
 
   // 運動習慣のない人が対象なので、最初の目標は達成できる高さから始める。
   static const int initialStepGoal = 3000;

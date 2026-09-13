@@ -80,10 +80,10 @@ class _BattleScreenState extends State<BattleScreen> {
     });
   }
 
-  int _keysGained = 0;
+  StageReward _reward = const StageReward();
 
   void _finish() {
-    if (_result.won) _keysGained = widget.state.clearStage(_stage);
+    if (_result.won) _reward = widget.state.clearStage(_stage);
     setState(() {});
   }
 
@@ -362,33 +362,56 @@ class _BattleScreenState extends State<BattleScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (_keysGained > 0) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppColors.hollow.withValues(alpha: 0.85),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.gold),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.vpn_key, size: 16, color: AppColors.gold),
-                  const SizedBox(width: 8),
-                  Text(
-                    '解放の鍵 ×$_keysGained を手に入れた',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.gold,
-                    ),
+          if (!_reward.isEmpty) ...[
+            // 数が多いほど横に並ぶ。狭い画面でははみ出すので折り返す
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                if (_reward.tickets > 0)
+                  _rewardPill(
+                    Icons.confirmation_number,
+                    'ガチャチケット ×${_reward.tickets}',
+                    AppColors.rose,
                   ),
-                ],
-              ),
+                if (_reward.keys > 0)
+                  _rewardPill(
+                    Icons.vpn_key,
+                    '解放の鍵 ×${_reward.keys}',
+                    AppColors.gold,
+                  ),
+              ],
             ),
             const SizedBox(height: 12),
           ],
           _finishButton(),
+        ],
+      ),
+    );
+  }
+
+  Widget _rewardPill(IconData icon, String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.hollow.withValues(alpha: 0.85),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
         ],
       ),
     );

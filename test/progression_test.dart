@@ -130,24 +130,64 @@ void main() {
     });
   });
 
-  group('鍵の入手', () {
-    test('ボスを倒すと落とす', () {
+  group('勝ったときの取り分', () {
+    test('ボスは鍵を落とす', () {
       final state = GameState.fresh();
       state.clearedStage = 9;
 
       final got = state.clearStage(10);
 
-      expect(got, GameState.bossKeyDrop);
+      expect(got.keys, GameState.bossKeyDrop);
       expect(state.keys, GameState.bossKeyDrop);
     });
 
-    test('通常の敵は落とさない', () {
+    test('通常の敵は鍵を落とさない', () {
       final state = GameState.fresh();
 
       final got = state.clearStage(1);
 
-      expect(got, 0);
+      expect(got.keys, 0);
       expect(state.keys, 0);
+    });
+
+    test('どの敵を倒してもチケットが出る', () {
+      final state = GameState.fresh();
+
+      final got = state.clearStage(1);
+
+      expect(got.tickets, GameState.winTicketDrop);
+      expect(state.tickets, GameState.winTicketDrop);
+    });
+
+    test('ボスのほうが多い', () {
+      final state = GameState.fresh();
+      state.clearedStage = 9;
+
+      final got = state.clearStage(10);
+
+      expect(got.tickets, GameState.bossTicketDrop);
+      expect(GameState.bossTicketDrop, greaterThan(GameState.winTicketDrop));
+    });
+
+    test('勝ってもコインは増えない', () {
+      // 強さの源は運動だけ。ここでコインを配ると歩かずに強くなれてしまう
+      final state = GameState.fresh();
+      final before = state.coins;
+
+      state.clearStage(1);
+
+      expect(state.coins, before);
+    });
+
+    test('同じステージを勝ち直しても取り分は出ない', () {
+      // 稼ぎ直しができると、チケットが歩数から切り離されてしまう
+      final state = GameState.fresh();
+      state.clearStage(1);
+
+      final again = state.clearStage(1);
+
+      expect(again.isEmpty, isTrue);
+      expect(state.tickets, GameState.winTicketDrop);
     });
   });
 
