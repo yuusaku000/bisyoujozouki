@@ -12,24 +12,29 @@ CC0 なので表示の義務はないが、敬意として残しておく。
 すべて実際に録られた音。最初は Kenney の合成UI音を入れていたが、
 安っぽく聞こえたので、録音素材に入れ替えた。
 
+どれを何に使うかは、候補を並べたページで聴き比べて選んだもの。
+
 | ファイル | 元 | 出どころ |
 |---|---|---|
-| tap.ogg | plop_01.ogg | A |
-| page.ogg | book_flip.1.ogg | C |
-| confirm.ogg | paper_02.ogg | A |
-| back.ogg | sfx100v2_door_04.ogg | B |
-| hit.ogg | hit_02.ogg | A |
-| heavy.ogg | gong_01.ogg | A |
-| win.ogg | bell_01.ogg | A |
-| lose.ogg | door_close_01.ogg | A |
-| gacha.ogg | sfx100v2_items_01.ogg | B |
+| tap.wav | click3.wav | C |
+| page.ogg | paper_03.ogg | A |
+| confirm.wav | switch28.wav | C |
+| back.wav | switch12.wav | C |
+| hit.ogg | hit_01.ogg | A |
+| heavy.ogg | slam_04.ogg | A |
+| win.ogg | sfx100v2_items_02.ogg | B |
+| lose.ogg | other_04.ogg | A |
+| gacha.ogg | sfx100v2_lock_open_01.ogg | B |
 | reveal.ogg | glass_03.ogg | A |
-| levelup.ogg | bell_03.ogg | A |
+| levelup.ogg | sfx100v2_items_02.ogg | B |
 | heart.ogg | glass_01.ogg | A |
 
 - **A** … rubberduck「[100 CC0 SFX](https://opengameart.org/content/100-cc0-sfx)」/ CC0
 - **B** … rubberduck「[100 CC0 SFX #2](https://opengameart.org/content/100-cc0-sfx-2)」/ CC0
-- **C** … StarNinjas「[10 Book Page Flips](https://opengameart.org/content/10-book-page-flips)」/ CC0
+- **C** … Kenney「[51 UI sound effects](https://opengameart.org/content/51-ui-sound-effects-buttons-switches-and-clicks)」/ CC0
+  （こちらは合成音ではなく、実際のスイッチとクリックを録ったもの）
+
+win と levelup は同じ音。鳴る場面が離れているので、分けていない。
 
 名前を用途に付け替えてあるだけで、中身は無加工。
 

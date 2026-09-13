@@ -9,16 +9,16 @@ library;
 /// 効果音。パスは assets/ からの相対で、audioplayers がその前を足す。
 enum Sfx {
   /// 画面を軽くつついたとき。キャラをつつく、札を選ぶ。
-  tap('audio/sfx/tap.ogg'),
+  tap('audio/sfx/tap.wav'),
 
   /// 物語を1行進める。つつく音より軽くする。
   page('audio/sfx/page.ogg'),
 
   /// 決定。今日を記録する、買う、渡す。
-  confirm('audio/sfx/confirm.ogg'),
+  confirm('audio/sfx/confirm.wav'),
 
   /// 閉じる、戻る。
-  back('audio/sfx/back.ogg'),
+  back('audio/sfx/back.wav'),
 
   /// 味方の攻撃が当たった。
   hit('audio/sfx/hit.ogg'),
