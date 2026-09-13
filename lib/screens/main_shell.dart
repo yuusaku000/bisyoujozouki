@@ -6,6 +6,7 @@ import '../services/save_store.dart';
 import '../services/step_source.dart';
 import 'battle_screen.dart';
 import 'boot_screen.dart';
+import 'name_screen.dart';
 import 'grow_tab.dart';
 import 'home_tab.dart';
 import 'gacha_tab.dart';
@@ -115,6 +116,17 @@ class _MainShellState extends State<MainShell> {
   Widget build(BuildContext context) {
     final state = _state;
     if (state == null) return const BootScreen();
+
+    // 名前を聞くのは物語より前。「——来る。」のあとで尋ねると、
+    // 切迫した場面がそこで止まってしまう。
+    if (!state.hasName) {
+      return NameScreen(
+        onDecided: (name) {
+          state.userName = name;
+          _changed();
+        },
+      );
+    }
 
     return Stack(
       children: [

@@ -65,14 +65,28 @@ class GameState {
     this.battleSpeed = BattleSpeed.normal,
     this.tutorialPhase = 0,
     this.devMode = false,
+    this.userName = '',
+    this.avatarId = 'organ:heart',
     this.totalSteps = 0,
     Map<String, List<int>>? healthLog,
     Set<String>? claimedAchievements,
   }) : healthLog = healthLog ?? <String, List<int>>{},
        claimedAchievements = claimedAchievements ?? <String>{};
 
+  /// 呼び名。はじめに一度だけ聞く。
+  String userName;
+
+  /// プロフィールのアイコン。'organ:heart' や 'enemy:ramen' の形。
+  String avatarId;
+
+  /// 名前を聞いたかどうか。空のままでも進めるが、一度は尋ねる。
+  bool get hasName => userName.trim().isNotEmpty;
+
   /// 合わせて何歩あるいたか。1日を締めるたびに足す。
   int totalSteps;
+
+  /// 名前の長さ。長すぎると画面のどこにも収まらない。
+  static const int maxNameLength = 12;
 
   /// 受け取り済みの達成。報酬を二度渡さないために持つ。
   final Set<String> claimedAchievements;
@@ -349,6 +363,8 @@ class GameState {
     'battleSpeed': battleSpeed.name,
     'tutorialPhase': tutorialPhase,
     'healthLog': healthLog,
+    'userName': userName,
+    'avatarId': avatarId,
     'totalSteps': totalSteps,
     'claimedAchievements': claimedAchievements.toList(),
     'devMode': devMode,
@@ -385,6 +401,8 @@ class GameState {
           .map((e) => e as String)
           .toList(),
       // 以前は見たかどうかの真偽値だけだった。見終えていれば最後まで進める。
+      userName: map['userName'] as String? ?? '',
+      avatarId: map['avatarId'] as String? ?? 'organ:heart',
       totalSteps: map['totalSteps'] as int? ?? 0,
       claimedAchievements:
           ((map['claimedAchievements'] as List<dynamic>?) ?? const [])

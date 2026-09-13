@@ -11,8 +11,10 @@ import '../widgets/coin_text.dart';
 import '../widgets/health_bar.dart';
 import '../widgets/ornate.dart';
 import '../data/achievements.dart';
+import '../data/avatars.dart';
 import '../models/vitals.dart';
 import 'achievements_screen.dart';
+import 'profile_screen.dart';
 import '../widgets/progress_ring.dart';
 import '../widgets/today_clock.dart';
 import 'vitals_screen.dart';
@@ -112,6 +114,57 @@ class _HomeTabState extends State<HomeTab> {
   /// 杯のしるし。輪の埋まり具合で、何かが貯まる場所だと分かるようにする。
   ///
   /// 小さな線画だけだと設定や情報のアイコンに紛れて、押す気にならない。
+  /// 名前と顔。押すとプロフィールへ。
+  ///
+  /// 自分の記録がどこにあるのかは、自分の顔が置いてあるのが
+  /// いちばん分かりやすい。
+  Widget _profileButton() {
+    final avatar = avatarOf(state);
+
+    return GestureDetector(
+      onTap: _openProfile,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(4, 4, 12, 4),
+        decoration: BoxDecoration(
+          color: AppColors.hollow.withValues(alpha: 0.75),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.goldDim.withValues(alpha: 0.6)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AvatarCircle(avatar: avatar, size: 26, border: 1.2),
+            const SizedBox(width: 7),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 74),
+              child: Text(
+                state.userName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openProfile() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            ProfileScreen(state: state, onChanged: widget.onChanged),
+      ),
+    );
+    if (mounted) setState(() {});
+  }
+
   Widget _trophyButton() {
     final done = kAchievements.where((a) => a.isDone(state)).length;
     final ready = claimable(state).isNotEmpty;
@@ -445,7 +498,7 @@ class _HomeTabState extends State<HomeTab> {
       padding: const EdgeInsets.fromLTRB(14, 8, 8, 4),
       child: Row(
         children: [
-          _pill('${state.dayCount}日目'),
+          _profileButton(),
           const SizedBox(width: 8),
           _mark(
             widget.anchors?.coin,
@@ -482,6 +535,14 @@ class _HomeTabState extends State<HomeTab> {
         children: [
           const Icon(Icons.schedule, size: 12, color: AppColors.textMuted),
           const SizedBox(width: 6),
+          Text(
+            '${state.dayCount}日目 ・ ',
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textMuted,
+            ),
+          ),
           const TodayClock(
             style: TextStyle(
               fontSize: 12,
