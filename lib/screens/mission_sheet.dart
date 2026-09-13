@@ -6,35 +6,19 @@ import '../models/game_state.dart';
 import '../models/mission.dart';
 import '../widgets/ornate.dart';
 
-/// 今日の目標を自分で選ぶ。押しつけられた課題より、選んだ約束のほうが守れる。
-class MissionSheet extends StatefulWidget {
-  const MissionSheet({super.key, required this.state, required this.onChanged});
+/// 今日の目標を見る。
+///
+/// 以前は一覧から3つ選ばせていたが、選べると「今日できそうなもの」だけを
+/// 選んで終われてしまう。あるく・のぼる・ととのえるが毎日1つずつ決まって
+/// いるほうが、その日やることが迷わず決まる。
+class MissionSheet extends StatelessWidget {
+  const MissionSheet({super.key, required this.state});
 
   final GameState state;
-  final VoidCallback onChanged;
-
-  @override
-  State<MissionSheet> createState() => _MissionSheetState();
-}
-
-class _MissionSheetState extends State<MissionSheet> {
-  GameState get state => widget.state;
-
-  bool _isChosen(Mission m) => state.missionIds.contains(m.id);
-
-  void _toggle(Mission m) {
-    if (_isChosen(m)) {
-      state.missionIds.remove(m.id);
-    } else if (state.missionIds.length < kMissionSlots) {
-      state.missionIds.add(m.id);
-    }
-    setState(() {});
-    widget.onChanged();
-  }
 
   @override
   Widget build(BuildContext context) {
-    final chosen = state.missionIds.length;
+    final missions = state.missions;
 
     return Container(
       constraints: BoxConstraints(
@@ -51,7 +35,7 @@ class _MissionSheetState extends State<MissionSheet> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(18, 12, 18, 4),
+              padding: const EdgeInsets.fromLTRB(18, 14, 18, 4),
               child: Row(
                 children: [
                   const Text(
@@ -64,13 +48,11 @@ class _MissionSheetState extends State<MissionSheet> {
                   ),
                   const Spacer(),
                   Text(
-                    '$chosen / $kMissionSlots',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w900,
-                      color: chosen == kMissionSlots
-                          ? AppColors.genki
-                          : AppColors.textMuted,
+                    '${state.dayCount}日目',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textMuted,
                     ),
                   ),
                 ],
@@ -81,19 +63,27 @@ class _MissionSheetState extends State<MissionSheet> {
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  '選んだ目標は、今日を記録したときに判定されます',
+                  '毎日3つ、自動で決まります。今日を記録したときに判定されます',
                   style: TextStyle(fontSize: 11, color: AppColors.textMuted),
                 ),
               ),
             ),
             const SizedBox(height: 12),
             Flexible(
-              child: ListView.separated(
+              child: ListView(
                 shrinkWrap: true,
                 padding: const EdgeInsets.fromLTRB(14, 0, 14, 20),
-                itemCount: kMissions.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 10),
-                itemBuilder: (context, i) => _card(kMissions[i]),
+                children: [
+                  for (final mission in missions) ...[
+                    _card(mission),
+                    const SizedBox(height: 10),
+                  ],
+                  const SizedBox(height: 4),
+                  if (missions.length == kMissionSlots)
+                    _bonusCard()
+                  else
+                    _notYet(),
+                ],
               ),
             ),
           ],
@@ -103,81 +93,159 @@ class _MissionSheetState extends State<MissionSheet> {
   }
 
   Widget _card(Mission mission) {
-    final chosen = _isChosen(mission);
-    final full = state.missionIds.length >= kMissionSlots && !chosen;
     final givesKey = mission.reward.keys > 0;
 
-    return Opacity(
-      opacity: full ? 0.45 : 1,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: full ? null : () => _toggle(mission),
-          child: OrnatePanel(
-            padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
-            borderColor: chosen
-                ? AppColors.rose
-                : givesKey
-                ? AppColors.gold
-                : AppColors.goldDim,
-            glow: chosen,
-            child: Row(
+    return OrnatePanel(
+      padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
+      borderColor: givesKey ? AppColors.gold : AppColors.goldDim,
+      child: Row(
+        children: [
+          _kindChip(mission.kind),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  chosen ? Icons.check_circle : Icons.radio_button_unchecked,
-                  size: 22,
-                  color: chosen ? AppColors.rose : AppColors.textMuted,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        mission.label,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        mission.detail,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppColors.textMuted,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          Icon(
-                            givesKey
-                                ? Icons.vpn_key
-                                : Icons.confirmation_number,
-                            size: 12,
-                            color: givesKey ? AppColors.gold : AppColors.rose,
-                          ),
-                          const SizedBox(width: 5),
-                          Text(
-                            mission.reward.label,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: givesKey ? AppColors.gold : AppColors.rose,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                Text(
+                  mission.label,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
+                const SizedBox(height: 2),
+                Text(
+                  mission.detail,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                _rewardLine(mission.reward),
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  /// 何の目標かを一目で分ける。3つが並ぶので、種類が見えないと
+  /// どれも同じ課題に見えてしまう。
+  Widget _kindChip(MissionKind kind) {
+    final color = switch (kind) {
+      MissionKind.walk => AppColors.rose,
+      MissionKind.climb => AppColors.gold,
+      MissionKind.care => AppColors.genki,
+    };
+
+    return Container(
+      // 「ととのえる」が5文字。詰めると2行に折れる
+      width: 66,
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(9),
+        border: Border.all(color: color.withValues(alpha: 0.6)),
+      ),
+      child: Text(
+        kind.label,
+        textAlign: TextAlign.center,
+        maxLines: 1,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w900,
+          color: color,
         ),
       ),
+    );
+  }
+
+  /// 3つ揃えたときの取り分。1つずつの報酬より目立たせる。
+  Widget _bonusCard() {
+    return OrnatePanel(
+      padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
+      borderColor: AppColors.rose,
+      glow: true,
+      child: Row(
+        children: [
+          const Icon(Icons.workspace_premium, size: 26, color: AppColors.rose),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '3つすべて達成',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 2),
+                const Text(
+                  'そろえた日だけ、上乗せでもらえます',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                _rewardLine(kAllMissionsBonus),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// まだ全部の種類が出そろっていない日。
+  ///
+  /// 何も書かないと「3つと言ったのに2つしかない」と見える。
+  Widget _notYet() {
+    return OrnatePanel(
+      padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
+      child: Row(
+        children: [
+          const Icon(Icons.lock_outline, size: 22, color: AppColors.textMuted),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text(
+              '仲間が増えると、目標も増えます。\n'
+              '3つそろった日は、上乗せの報酬がつきます',
+              style: TextStyle(
+                fontSize: 11,
+                height: 1.6,
+                color: AppColors.textMuted,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _rewardLine(MissionReward reward) {
+    final givesKey = reward.keys > 0;
+
+    return Row(
+      children: [
+        Icon(
+          givesKey ? Icons.vpn_key : Icons.confirmation_number,
+          size: 12,
+          color: givesKey ? AppColors.gold : AppColors.rose,
+        ),
+        const SizedBox(width: 5),
+        Flexible(
+          child: Text(
+            reward.label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: givesKey ? AppColors.gold : AppColors.rose,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -19,6 +19,7 @@ class DayResult {
     required this.healthDeltas,
     required this.newStepGoal,
     required this.clearedMissions,
+    this.missionBonus = const MissionReward(),
   });
 
   /// もらったコインの内訳。何が効いたのかを結果画面で見せる。
@@ -33,6 +34,11 @@ class DayResult {
   final int? newStepGoal;
 
   final List<Mission> clearedMissions;
+
+  /// 3つとも達成した日だけ入る上乗せ。空のこともある。
+  final MissionReward missionBonus;
+
+  bool get allMissionsCleared => !missionBonus.isEmpty;
 }
 
 /// ステージをひとつ進めたときの取り分。
@@ -71,7 +77,6 @@ class GameState {
     required this.readEpisodes,
     required this.keys,
     required this.tickets,
-    required this.missionIds,
     required this.inventory,
     required this.pullsSinceSsr,
     this.battleSpeed = BattleSpeed.normal,
@@ -140,7 +145,6 @@ class GameState {
     readEpisodes: <String>{},
     keys: 0,
     tickets: 0,
-    missionIds: <String>[],
     inventory: <String, int>{},
     pullsSinceSsr: 0,
   );
@@ -165,7 +169,6 @@ class GameState {
   int tickets;
 
   /// 今日ぶんの目標。自分で選ぶ。1日を終えると空になる。
-  List<String> missionIds;
 
   BattleSpeed battleSpeed;
 
@@ -225,10 +228,9 @@ class GameState {
 
   int heartsOf(String organId) => statusOf(organId).hearts;
 
+  /// 今日の3つ。選ぶものではなく、日ごとに決まっている。
   List<Mission> get missions =>
-      missionIds.map(missionById).whereType<Mission>().toList();
-
-  bool get hasMissions => missionIds.isNotEmpty;
+      missionsForDay(dayCount, {for (final o in party) o.id});
 
   int get currentStage => clearedStage + 1;
 
@@ -328,11 +330,22 @@ class GameState {
       if (log.length > logDays) log.removeRange(0, log.length - logDays);
     }
 
-    final cleared = missions.where((m) => m.isDone(today, stepGoal)).toList();
+    final todays = missions;
+    final cleared = todays.where((m) => m.isDone(today, stepGoal)).toList();
     for (final m in cleared) {
       keys += m.reward.keys;
       tickets += m.reward.tickets;
     }
+
+    // 3つとも揃った日だけの上乗せ。拾えるものだけ拾う日と差をつける。
+    //
+    // まだ会っていない子がいて3つ出そろわない日は、上乗せも無い。
+    // 目標がひとつしかない日に鍵が出ると、そこで止まるのが得になる。
+    final bonus = todays.length == kMissionSlots && cleared.length == todays.length
+        ? kAllMissionsBonus
+        : const MissionReward();
+    keys += bonus.keys;
+    tickets += bonus.tickets;
 
     totalSteps += today.steps;
 
@@ -341,16 +354,16 @@ class GameState {
     coins += earned.total;
     final newGoal = _updateGoal(earned.goalAchieved);
 
+    // 日が変わると、次の3つに入れ替わる。
     dayCount++;
     today = const DailyInput();
-    // 翌日はまた選び直す
-    missionIds = <String>[];
 
     return DayResult(
       coins: earned,
       healthDeltas: deltas,
       newStepGoal: newGoal,
       clearedMissions: cleared,
+      missionBonus: bonus,
     );
   }
 
@@ -389,7 +402,6 @@ class GameState {
     'readEpisodes': readEpisodes.toList(),
     'keys': keys,
     'tickets': tickets,
-    'missionIds': missionIds,
     'battleSpeed': battleSpeed.name,
     'tutorialPhase': tutorialPhase,
     'healthLog': healthLog,
@@ -429,9 +441,6 @@ class GameState {
           .toSet(),
       keys: map['keys'] as int? ?? 0,
       tickets: map['tickets'] as int? ?? 0,
-      missionIds: ((map['missionIds'] as List<dynamic>?) ?? const [])
-          .map((e) => e as String)
-          .toList(),
       // 以前は見たかどうかの真偽値だけだった。見終えていれば最後まで進める。
       userName: map['userName'] as String? ?? '',
       avatarId: map['avatarId'] as String? ?? 'organ:heart',

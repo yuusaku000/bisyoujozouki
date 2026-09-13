@@ -114,7 +114,7 @@ class _HomeTabState extends State<HomeTab> with WidgetsBindingObserver {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => MissionSheet(state: state, onChanged: widget.onChanged),
+      builder: (_) => MissionSheet(state: state),
     );
     if (mounted) setState(() {});
   }
@@ -410,6 +410,48 @@ class _HomeTabState extends State<HomeTab> with WidgetsBindingObserver {
                         ],
                       ),
                     ),
+                  if (result.allMissionsCleared) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 9,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.rose.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.rose),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.workspace_premium,
+                            size: 17,
+                            color: AppColors.rose,
+                          ),
+                          const SizedBox(width: 8),
+                          const Expanded(
+                            child: Text(
+                              '3つすべて達成！',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w900,
+                                color: AppColors.rose,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            result.missionBonus.label,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.gold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
                 if (result.newStepGoal != null) ...[
                   const SizedBox(height: 14),
@@ -915,9 +957,7 @@ class _HomeTabState extends State<HomeTab> with WidgetsBindingObserver {
               children: [
                 Expanded(
                   child: QuietButton(
-                    label: state.hasMissions
-                        ? '今日の目標 ${state.missionIds.length}'
-                        : '目標をえらぶ',
+                    label: '今日の目標',
                     icon: Icons.checklist,
                     onPressed: _openMissions,
                   ),

@@ -71,52 +71,151 @@ void main() {
   });
 
   group('ミッション', () {
-    test('選べるのは決まった数まで', () {
-      final state = GameState.fresh();
-      for (final m in kMissions) {
-        if (state.missionIds.length < kMissionSlots) state.missionIds.add(m.id);
+    test('毎日3つ出る', () {
+      for (var day = 1; day <= 40; day++) {
+        expect(missionsForDay(day, _everyone).length, kMissionSlots, reason: '$day日目');
       }
-      expect(state.missionIds.length, kMissionSlots);
     });
 
-    test('達成した目標の報酬が入る', () {
+    test('あるく・のぼる・ととのえるが1つずつ', () {
+      // 無作為に引くと、歩く目標ばかりの日ができてしまう
+      for (var day = 1; day <= 40; day++) {
+        final kinds = missionsForDay(day, _everyone).map((m) => m.kind).toList();
+        expect(kinds, MissionKind.values, reason: '$day日目の内訳が偏っている');
+      }
+    });
+
+    test('同じ日なら何度見ても同じ3つ', () {
+      expect(
+        missionsForDay(7, _everyone).map((m) => m.id),
+        missionsForDay(7, _everyone).map((m) => m.id),
+      );
+    });
+
+    test('日が変われば入れ替わる', () {
+      final today = missionsForDay(3, _everyone).map((m) => m.id).toList();
+      final tomorrow = missionsForDay(4, _everyone).map((m) => m.id).toList();
+
+      expect(today, isNot(tomorrow));
+    });
+
+    test('どの目標もいつかは出る', () {
+      // 出番の来ない目標が混じっていると、書いた意味がない
+      final seen = <String>{};
+      for (var day = 1; day <= 60; day++) {
+        seen.addAll(missionsForDay(day, _everyone).map((m) => m.id));
+      }
+      expect(seen, kMissions.map((m) => m.id).toSet());
+    });
+
+    test('まだ会っていない子の記録は求められない', () {
+      // 記録の画面に無い項目を目標に出すと、その日は達成しようがない
       final state = GameState.fresh();
-      state.missionIds = ['long_walk', 'eat'];
-      state.today = const DailyInput(steps: 8000, ateWell: true);
+
+      for (var day = 1; day <= 20; day++) {
+        state.dayCount = day;
+        for (final m in state.missions) {
+          expect(
+            m.requires.every((id) => state.party.any((o) => o.id == id)),
+            isTrue,
+            reason: '$day日目に ${m.label} が出ている',
+          );
+        }
+      }
+    });
+
+    test('種類がそろわない日は上乗せが出ない', () {
+      // 目標がひとつしかない日に鍵が出ると、そこで止まるのが得になる
+      final state = GameState.fresh();
+      expect(state.missions.length, lessThan(kMissionSlots));
+      state.today = const DailyInput(
+        steps: 100000,
+        stairs: 100,
+        ateWell: true,
+        rested: true,
+        sleptWell: true,
+      );
 
       final result = state.endDay();
 
-      expect(result.clearedMissions.length, 2);
-      expect(state.keys, 1, reason: '8000歩は鍵が出る');
-      expect(state.tickets, 1);
+      expect(result.clearedMissions, isNotEmpty);
+      expect(result.allMissionsCleared, isFalse);
+      expect(state.keys, 0);
     });
 
-    test('未達の目標では何ももらえない', () {
-      final state = GameState.fresh();
-      state.missionIds = ['long_walk'];
-      state.today = const DailyInput(steps: 100);
+    test('日数が進むと今日の3つも変わる', () {
+      final state = _fullParty();
+      final first = state.missions.map((m) => m.id).toList();
+
+      state.endDay();
+
+      expect(state.missions.map((m) => m.id).toList(), isNot(first));
+    });
+
+    test('達成した目標だけ報酬が入る', () {
+      final state = _fullParty();
+      final care = state.missions.firstWhere(
+        (m) => m.kind == MissionKind.care,
+      );
+      // 生活だけ整えた日。歩数も階段も0なので、残り2つは達成しない
+      state.today = const DailyInput(
+        ateWell: true,
+        rested: true,
+        sleptWell: true,
+      );
+
+      final result = state.endDay();
+
+      expect(result.clearedMissions.map((m) => m.id), [care.id]);
+      expect(state.keys + state.tickets, greaterThan(0));
+      expect(result.allMissionsCleared, isFalse);
+    });
+
+    test('未達なら何ももらえない', () {
+      final state = _fullParty();
+      state.today = const DailyInput(steps: 1);
 
       final result = state.endDay();
 
       expect(result.clearedMissions, isEmpty);
       expect(state.keys, 0);
+      expect(state.tickets, 0);
+      expect(result.allMissionsCleared, isFalse);
     });
 
-    test('1日を終えると選び直しになる', () {
-      final state = GameState.fresh();
-      state.missionIds = ['eat'];
-      state.today = const DailyInput(ateWell: true);
+    test('3つそろえると上乗せがもらえる', () {
+      final state = _fullParty();
+      state.today = _clearsAll(state);
 
-      state.endDay();
+      final result = state.endDay();
 
-      expect(state.missionIds, isEmpty);
-      expect(state.hasMissions, isFalse);
+      expect(result.clearedMissions.length, kMissionSlots);
+      expect(result.allMissionsCleared, isTrue);
+      expect(state.keys, greaterThanOrEqualTo(kAllMissionsBonus.keys));
+      expect(state.tickets, greaterThanOrEqualTo(kAllMissionsBonus.tickets));
+    });
+
+    test('2つまでなら上乗せは出ない', () {
+      final state = _fullParty();
+      // 歩数だけ抜く。あるくの目標はどれも歩数で判定される
+      final all = _clearsAll(state);
+      state.today = DailyInput(
+        steps: 0,
+        stairs: all.stairs,
+        ateWell: all.ateWell,
+        rested: all.rested,
+        sleptWell: all.sleptWell,
+      );
+
+      final result = state.endDay();
+
+      expect(result.allMissionsCleared, isFalse);
+      expect(result.clearedMissions.length, lessThan(kMissionSlots));
     });
 
     test('報酬でコインは増えない', () {
       // コインの源は歩数だけ、という決まりを崩さない
-      final state = GameState.fresh();
-      state.missionIds = ['eat', 'rest', 'sleep'];
+      final state = _fullParty();
       state.today = const DailyInput(
         ateWell: true,
         rested: true,
@@ -196,14 +295,12 @@ void main() {
     state.keys = 3;
     state.tickets = 7;
     state.battleSpeed = BattleSpeed.fast;
-    state.missionIds = ['eat'];
 
     final restored = GameState.decode(state.encode());
 
     expect(restored.keys, 3);
     expect(restored.tickets, 7);
     expect(restored.battleSpeed, BattleSpeed.fast);
-    expect(restored.missionIds, ['eat']);
   });
 
   test('限界を解いた回数も保存される', () {
@@ -213,3 +310,28 @@ void main() {
     expect(GameState.decode(state.encode()).statusOf('heart').levelCap, 30);
   });
 }
+
+/// その日の3つを全部満たす記録。目標の中身が変わっても効くように、
+/// 実際に出ている3つから必要な値を組み立てる。
+DailyInput _clearsAll(GameState state) {
+  const input = DailyInput(
+    steps: 100000,
+    stairs: 100,
+    ateWell: true,
+    rested: true,
+    sleptWell: true,
+  );
+  for (final m in state.missions) {
+    if (!m.isDone(input, state.stepGoal)) {
+      throw StateError('${m.label} を満たせていない');
+    }
+  }
+  return input;
+}
+
+const Set<String> _everyone = {'heart', 'lung', 'stomach', 'liver', 'brain'};
+
+/// 五人そろった状態。目標は仲間の顔ぶれで変わるので、
+/// 3つ出そろう前提の試験にはこれを使う。
+GameState _fullParty() => GameState.fresh()
+  ..readEpisodes.addAll(const ['main:2', 'main:3', 'main:5', 'main:7']);
