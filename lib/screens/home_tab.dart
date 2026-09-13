@@ -231,6 +231,7 @@ class _HomeTabState extends State<HomeTab> {
           clearedStage: state.clearedStage,
           readEpisodes: state.readEpisodes,
           heartsOf: state.heartsOf,
+          userName: state.userName,
           onRead: _onEpisodeRead,
         ),
       ),

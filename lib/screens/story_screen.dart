@@ -9,9 +9,18 @@ import '../models/organ.dart';
 
 /// 1話を読む画面。タップで1行ずつ進む。
 class StoryScreen extends StatefulWidget {
-  const StoryScreen({super.key, required this.episode, this.onRead});
+  const StoryScreen({
+    super.key,
+    required this.episode,
+    required this.userName,
+    this.onRead,
+  });
 
   final StoryEpisode episode;
+
+  /// セリフの中でこの人を呼ぶときの名前。名前で呼ばれるかどうかで、
+  /// 同じ一行の近さが変わる。
+  final String userName;
 
   /// 最後まで読んだときに呼ばれる。仲間が増えるのはこの瞬間。
   final VoidCallback? onRead;
@@ -211,7 +220,7 @@ class _StoryScreenState extends State<StoryScreen> {
             const SizedBox(height: 10),
           ],
           Text(
-            line.text,
+            storyText(line.text, widget.userName),
             style: TextStyle(
               fontSize: 15,
               height: 1.8,

@@ -10,6 +10,8 @@ class StoryLine {
 
   /// nullなら地の文。
   final String? speakerId;
+
+  /// 本文。`{name}` はその人の呼び名に置き換わる。[storyText] を通すこと。
   final String text;
 
   /// その行での表情。1枚絵のまま喋り続けると芝居が死ぬ。
@@ -18,6 +20,15 @@ class StoryLine {
   /// 画面に出す敵。指定すると臓器の立ち絵の代わりにこちらが立つ。
   /// 相手の姿が見えないまま「この先に何かいる」と言われても伝わらない。
   final String? enemyId;
+}
+
+/// セリフの `{name}` を、プレイヤーが入れた呼び名に差し替える。
+///
+/// 名前で呼ばれるかどうかで、同じ一行の近さがまるで変わる。
+/// 呼び名が無いうちは「あなた」に落として、文が壊れないようにする。
+String storyText(String raw, String name) {
+  final trimmed = name.trim();
+  return raw.replaceAll('{name}', trimmed.isEmpty ? 'あなた' : trimmed);
 }
 
 /// 表情の別名。キャラストーリー側から Condition を直接触らせないため。
@@ -55,30 +66,48 @@ const _futsuu = Condition.futsuu;
 const _fuchou = Condition.fuchou;
 
 /// バトルの報酬。コインを配らない代わりに、ここが進む。
+///
+/// 第一部(1〜10)で五人と出会い、何と戦っているのかが分かる。
+/// 第二部(12〜30)は、倒しても積み直されると知ってからの話。
 const List<StoryEpisode> kStory = [
   StoryEpisode(
     stage: 1,
     title: 'はじめて、目が合った',
     lines: [
       StoryLine('深夜のラーメンが、湯気ごと消えていった。', enemyId: 'ramen'),
-      StoryLine('静かになった胸の奥。そこに、彼女は立っていた。'),
+      StoryLine('胸の奥が、嘘のように静かになる。'),
+      StoryLine('——そこに、女の子が立っていた。'),
       StoryLine('……あ。', speakerId: 'heart', face: _futsuu),
-      StoryLine('ほんとに、聞こえてるんだ。', speakerId: 'heart', face: _futsuu),
-      StoryLine('彼女は自分の胸を押さえて、頬を赤くした。'),
+      StoryLine('ねえ。わたしのこと、見えてる？', speakerId: 'heart', face: _futsuu),
+      StoryLine('頷くと、彼女は口元を手でおさえた。'),
+      StoryLine('うそ。ほんとに届いた。', speakerId: 'heart', face: _genki),
+      StoryLine('彼女は胸に手をあてて、すこしだけ胸を張った。'),
+      StoryLine('わたし、{name}の心臓。', speakerId: 'heart', face: _genki),
+      StoryLine('言葉が、うまく飲み込めなかった。'),
+      StoryLine('さっきの、覚えてる？　真夜中に食べたやつ。', speakerId: 'heart', face: _futsuu),
       StoryLine(
-        'ずるいよ。わたしはずっと、あなたのこと知ってたのに。',
+        'ああいうのが積もると、ああやって形になって出てくるの。',
+        speakerId: 'heart',
+        face: _futsuu,
+      ),
+      StoryLine('いつもは、わたしたちが内側で黙って受け止めてる。', speakerId: 'heart', face: _futsuu),
+      StoryLine('でも今日は、{name}が一緒に殴ってくれたでしょ。', speakerId: 'heart', face: _genki),
+      StoryLine('……だから、見えるようになったんだと思う。', speakerId: 'heart', face: _futsuu),
+      StoryLine('そこで言葉を切って、彼女は頬を赤くした。'),
+      StoryLine(
+        'ずるいよ。わたしはずっと、{name}のこと知ってたのに。',
         speakerId: 'heart',
         face: _fuchou,
       ),
       StoryLine('生まれた日から、一度も休まずに。ずっと、そばで。', speakerId: 'heart', face: _futsuu),
       StoryLine(
-        'あなたが誰かを好きになった日も、全部わたしが跳ねてたんだよ？',
+        '{name}が誰かを好きになった日も、全部わたしが跳ねてたんだよ？',
         speakerId: 'heart',
         face: _genki,
       ),
       StoryLine('……気づいてくれるの、おそすぎ。', speakerId: 'heart', face: _fuchou),
       StoryLine('そう言って、彼女はそっぽを向いた。'),
-      StoryLine('けれど、胸の奥の鼓動は、さっきよりずっと速くなっていた。'),
+      StoryLine('けれど胸の奥の鼓動は、さっきよりずっと速くなっていた。'),
     ],
   ),
   StoryEpisode(
@@ -88,11 +117,16 @@ const List<StoryEpisode> kStory = [
       StoryLine('階段をのぼりきると、うしろで小さな音がした。'),
       StoryLine('はぁっ……はぁっ……ま、待って、ください……', speakerId: 'lung', face: _futsuu),
       StoryLine('振り向くと、知らない女の子が膝に手をついていた。'),
-      StoryLine('ご、ごめんなさい。わたし、まだ慣れてなくて……', speakerId: 'lung', face: _futsuu),
-      StoryLine('顔を上げた彼女の目が、少しうるんでいる。'),
-      StoryLine('でも、うれしいんです。', speakerId: 'lung', face: _futsuu),
+      StoryLine('誰かと問うより先に、彼女は姿勢を正した。'),
+      StoryLine('{name}さんの、肺です。', speakerId: 'lung', face: _futsuu),
+      StoryLine('ご、ごめんなさい。出てくるの、まだ慣れてなくて……', speakerId: 'lung', face: _futsuu),
+      StoryLine('横から、聞き慣れた声が割り込んだ。'),
+      StoryLine('ちゃんと使ってあげると、こうやって出てこられるの。', speakerId: 'heart', face: _futsuu),
+      StoryLine('今日の階段。あれ、この子のぶんだよ。', speakerId: 'heart', face: _genki),
+      StoryLine('顔を上げた彼女の目が、すこしうるんでいる。'),
+      StoryLine('……うれしいんです。', speakerId: 'lung', face: _futsuu),
       StoryLine(
-        'あなたが息を切らすってことは、生きて、動いてるってことだから。',
+        '{name}さんが息を切らすってことは、生きて、動いてるってことだから。',
         speakerId: 'lung',
         face: _genki,
       ),
@@ -100,6 +134,7 @@ const List<StoryEpisode> kStory = [
       StoryLine('彼女は一歩近づいて、こちらの手をとった。'),
       StoryLine('ね。いっしょに、深呼吸してくれますか。', speakerId: 'lung', face: _genki),
       StoryLine('触れた指先は、驚くほどあたたかかった。'),
+      StoryLine('その手を、心臓の彼女がじっと見ていた。'),
     ],
   ),
   StoryEpisode(
@@ -109,6 +144,7 @@ const List<StoryEpisode> kStory = [
       StoryLine('エレベーターの扉が閉じ、静けさが戻る。', enemyId: 'elevator'),
       StoryLine('ねえねえっ、今日のごはん、どうだった？', speakerId: 'stomach', face: _genki),
       StoryLine('小柄な女の子がスプーンを振りながら、距離をつめてきた。'),
+      StoryLine('あ、名乗ってなかった。わたし、{name}の胃！', speakerId: 'stomach', face: _genki),
       StoryLine(
         'わたしね、味はわからないの。届いたものを溶かすだけだから。',
         speakerId: 'stomach',
@@ -116,12 +152,12 @@ const List<StoryEpisode> kStory = [
       ),
       StoryLine('でもね。', speakerId: 'stomach', face: _futsuu),
       StoryLine(
-        'あなたが「おいしい」って笑った日は、なんとなくわかるんだ。',
+        '{name}が「おいしい」って笑った日は、なんとなくわかるんだ。',
         speakerId: 'stomach',
         face: _genki,
       ),
       StoryLine('……ふしぎだよね。顔なんて、見えないのに。', speakerId: 'stomach', face: _futsuu),
-      StoryLine('彼女はこちらを見上げて、少しだけ口をとがらせた。'),
+      StoryLine('彼女はこちらを見上げて、すこしだけ口をとがらせた。'),
       StoryLine('急いで飲み込まないで。ちゃんと味わって。', speakerId: 'stomach', face: _futsuu),
       StoryLine('そのほうが、長く一緒にいられるでしょ？', speakerId: 'stomach', face: _genki),
     ],
@@ -135,7 +171,7 @@ const List<StoryEpisode> kStory = [
       StoryLine('別に。べつに、いいんだけど。', speakerId: 'heart', face: _futsuu),
       StoryLine('鼓動が、ひとつ大きく跳ねた。'),
       StoryLine('……よくない。', speakerId: 'heart', face: _fuchou),
-      StoryLine('わたし、ずっとひとりであなたを動かしてたの。', speakerId: 'heart', face: _futsuu),
+      StoryLine('わたし、ずっとひとりで{name}を動かしてたの。', speakerId: 'heart', face: _futsuu),
       StoryLine('誰にも気づかれなくても、平気なつもりでいたの。', speakerId: 'heart', face: _fuchou),
       StoryLine(
         'なのに、見つけてもらったら……もう、戻れないじゃない。',
@@ -154,16 +190,18 @@ const List<StoryEpisode> kStory = [
     stage: 5,
     title: 'はじめてのおねがい',
     lines: [
-      StoryLine('五つ目の敵が崩れ落ちても、彼女は一言も発しなかった。'),
+      StoryLine('五つ目の敵が崩れ落ちても、その人は一言も発しなかった。'),
       StoryLine('眼鏡の奥の視線だけが、静かにこちらを向いている。'),
+      StoryLine('……肝臓です。名乗るのが遅れました。', speakerId: 'liver', face: _futsuu),
+      StoryLine('もっと早く出られたはずですが、必要が無かったので。', speakerId: 'liver', face: _futsuu),
       StoryLine('……わたしのこと、忘れていましたね。', speakerId: 'liver', face: _futsuu),
       StoryLine('いいんです。それがわたしの仕事ですから。', speakerId: 'liver', face: _futsuu),
       StoryLine('痛みも出さない。悲鳴も上げない。', speakerId: 'liver', face: _futsuu),
-      StoryLine('気づかれたときには、たいてい手遅れ。', speakerId: 'liver', face: _fuchou),
+      StoryLine('気づかれたときには、たいてい手遅れ。', speakerId: 'liver', face: _futsuu),
       StoryLine('彼女は眼鏡を外し、めずらしく目を伏せた。'),
       StoryLine('……ひとつだけ、わがままを言っても？', speakerId: 'liver', face: _futsuu),
       StoryLine('わたしが何も言わないうちに、休んでください。', speakerId: 'liver', face: _genki),
-      StoryLine('あなたに倒れられたら、わたし……', speakerId: 'liver', face: _fuchou),
+      StoryLine('{name}さんに倒れられたら、わたし……', speakerId: 'liver', face: _futsuu),
       StoryLine('言いかけて、彼女は口をつぐんだ。'),
       StoryLine('……いえ。なんでもありません。', speakerId: 'liver', face: _futsuu),
     ],
@@ -185,7 +223,7 @@ const List<StoryEpisode> kStory = [
       StoryLine('……聞いてた？', speakerId: 'stomach', face: _futsuu),
       StoryLine('顔を見合わせて、それから、どちらからともなく笑った。'),
       StoryLine('ふふ。にぎやかになりましたね。', speakerId: 'lung', face: _genki),
-      StoryLine('あなたの中、前はもっと静かだったのにね！', speakerId: 'stomach', face: _genki),
+      StoryLine('{name}の中、前はもっと静かだったのにね！', speakerId: 'stomach', face: _genki),
     ],
   ),
   StoryEpisode(
@@ -193,10 +231,12 @@ const List<StoryEpisode> kStory = [
     title: 'おやすみのまえに',
     lines: [
       StoryLine('夜が更けて、まぶたが重くなってきた。'),
-      StoryLine('……ねえ。わたしが何をしてるか、知ってる？', speakerId: 'brain', face: _futsuu),
+      StoryLine('……はじめまして。{name}の脳だよ。', speakerId: 'brain', face: _futsuu),
       StoryLine('静かな声の主が、本を閉じて隣に腰を下ろした。'),
+      StoryLine('会うのが最後になったね。いちばん奥にいるから。', speakerId: 'brain', face: _futsuu),
+      StoryLine('……わたしが何をしてるか、知ってる？', speakerId: 'brain', face: _futsuu),
       StoryLine(
-        'あなたが眠っているあいだ、今日あったことを片づけてるの。',
+        '{name}が眠っているあいだ、今日あったことを片づけてるの。',
         speakerId: 'brain',
         face: _futsuu,
       ),
@@ -206,7 +246,7 @@ const List<StoryEpisode> kStory = [
       StoryLine(
         '……はじめて声が届いた日のこと。あれだけは、毎晩読み返してる。',
         speakerId: 'brain',
-        face: _fuchou,
+        face: _futsuu,
       ),
       StoryLine('……言わなきゃよかった。忘れて。', speakerId: 'brain', face: _futsuu),
       StoryLine('おやすみ。ちゃんと、片づけておくから。', speakerId: 'brain', face: _genki),
@@ -217,7 +257,7 @@ const List<StoryEpisode> kStory = [
     title: '眠らないふたり',
     lines: [
       StoryLine('丑三つ時。灯りがひとつだけ点いている。'),
-      StoryLine('……あなたも起きてたんですか。', speakerId: 'liver', face: _futsuu),
+      StoryLine('……{name}さんも起きてたんですか。', speakerId: 'liver', face: _futsuu),
       StoryLine('机の上で、二人が向かい合っていた。'),
       StoryLine('わたしは夜のほうが仕事が多いの。あなたと同じ。', speakerId: 'brain', face: _futsuu),
       StoryLine('……似た者どうしですね。', speakerId: 'liver', face: _futsuu),
@@ -248,10 +288,18 @@ const List<StoryEpisode> kStory = [
         enemyId: 'boss_seikatsu',
       ),
       StoryLine('五人が、扉の前で足を止めた。'),
+      StoryLine('あれを放っておくとどうなるのかと尋ねると、'),
+      StoryLine('肝臓の彼女が、短く答えた。'),
+      StoryLine('……わたしたちが、順番に動かなくなります。', speakerId: 'liver', face: _futsuu),
+      StoryLine(
+        'ひとつずつ。{name}さんが気づかないうちに、静かに。',
+        speakerId: 'liver',
+        face: _futsuu,
+      ),
       StoryLine('引き返しても、誰も責めません。', speakerId: 'liver', face: _futsuu),
       StoryLine('でも、放っておけば大きくなるだけ。', speakerId: 'brain', face: _futsuu),
       StoryLine('心臓の彼女が、こちらの前に立った。'),
-      StoryLine('……決めるのは、あなた。', speakerId: 'heart', face: _futsuu),
+      StoryLine('……決めるのは、{name}。', speakerId: 'heart', face: _futsuu),
       StoryLine('でも、どっちを選んでも、わたしは一緒に行くから。', speakerId: 'heart', face: _genki),
       StoryLine('扉に手をかけると、五つの鼓動が重なった。'),
     ],
@@ -263,6 +311,8 @@ const List<StoryEpisode> kStory = [
       StoryLine('それは、はじめから奥にいた。', enemyId: 'boss_seikatsu'),
       StoryLine('黒い塊の表面で、見覚えのあるものが脈打っている。', enemyId: 'boss_seikatsu'),
       StoryLine('食べたもの。眠らなかった夜。座っていた時間。', enemyId: 'boss_seikatsu'),
+      StoryLine('——これは、おまえが積んだものだ。', enemyId: 'boss_seikatsu'),
+      StoryLine('——名前くらい、聞いたことがあるだろう。生活習慣病、と。', enemyId: 'boss_seikatsu'),
       StoryLine(
         '……こいつ、新しく現れたんじゃない。',
         speakerId: 'heart',
@@ -270,7 +320,7 @@ const List<StoryEpisode> kStory = [
         enemyId: 'boss_seikatsu',
       ),
       StoryLine(
-        'あなたが積み上げてきたものが、形になっただけです。',
+        '{name}さんが積み上げてきたものが、形になっただけです。',
         speakerId: 'liver',
         face: _futsuu,
         enemyId: 'boss_seikatsu',
@@ -286,7 +336,7 @@ const List<StoryEpisode> kStory = [
         face: _futsuu,
       ),
       StoryLine(
-        'あなたの最初の一拍も、最後の一拍も、ぜんぶわたしのものなんだから。',
+        '{name}の最初の一拍も、最後の一拍も、ぜんぶわたしのものなんだから。',
         speakerId: 'heart',
         face: _genki,
       ),
@@ -330,10 +380,19 @@ const List<StoryEpisode> kStory = [
     title: '順番',
     lines: [
       StoryLine('はじまりは、些細なことだった。'),
-      StoryLine('今日は、まず歩いてもらいます。心臓さんのぶんは後で。', speakerId: 'lung', face: _futsuu),
-      StoryLine('……は？　なんで後なの。', speakerId: 'heart', face: _futsuu),
+      StoryLine('その日なにをするか、五人で決めようとしていた。'),
+      StoryLine(
+        '今日はまず、階段をのぼってください。心臓さんの散歩は、そのあとで。',
+        speakerId: 'lung',
+        face: _futsuu,
+      ),
+      StoryLine('……は？　なんでわたしが後なの。', speakerId: 'heart', face: _futsuu),
       StoryLine('空気が、すっと冷えた。'),
-      StoryLine('酸素がなければ、あなたは動けません。順番の話です。', speakerId: 'lung', face: _fuchou),
+      StoryLine(
+        '酸素がなければ、{name}さんは動けません。順番の話です。',
+        speakerId: 'lung',
+        face: _fuchou,
+      ),
       StoryLine(
         'わたしが止まったら、その酸素はどこにも行かないけど。',
         speakerId: 'heart',
@@ -360,7 +419,7 @@ const List<StoryEpisode> kStory = [
     lines: [
       StoryLine('険悪なまま、三日が過ぎた。'),
       StoryLine('ねえ、はっきりさせよう。', speakerId: 'heart', face: _futsuu),
-      StoryLine('あなたが最初に思い出すの、誰？', speakerId: 'heart', face: _futsuu),
+      StoryLine('{name}が最初に思い出すの、誰？', speakerId: 'heart', face: _futsuu),
       StoryLine('答えようとして、言葉が出なかった。'),
       StoryLine('……ほら。困らせている。', speakerId: 'liver', face: _futsuu),
       StoryLine('困らせているのは、あなたたち全員です。', speakerId: 'liver', face: _futsuu),
@@ -373,7 +432,7 @@ const List<StoryEpisode> kStory = [
       StoryLine('脳の彼女が、静かに口を開いた。'),
       StoryLine('……わたしは、この人の記憶を全部持ってる。', speakerId: 'brain', face: _futsuu),
       StoryLine('あなたたちのことも、ぜんぶ、わたしの中にある。', speakerId: 'brain', face: _futsuu),
-      StoryLine('だから、いちばん近いのは自分だと思ってた。', speakerId: 'brain', face: _fuchou),
+      StoryLine('だから、いちばん近いのは自分だと思ってた。', speakerId: 'brain', face: _futsuu),
     ],
   ),
   StoryEpisode(
@@ -383,18 +442,24 @@ const List<StoryEpisode> kStory = [
       StoryLine('肝臓の彼女が、紙を一枚、机に置いた。'),
       StoryLine('割り当て表を作りました。', speakerId: 'liver', face: _futsuu),
       StoryLine('朝はわたし、昼は胃さん、夜は脳さん。', speakerId: 'liver', face: _futsuu),
-      StoryLine('こうすれば、争う理由がなくなります。', speakerId: 'liver', face: _futsuu),
+      StoryLine(
+        '{name}さんの時間を等分すれば、争う理由がなくなります。',
+        speakerId: 'liver',
+        face: _futsuu,
+      ),
       StoryLine('しばらく、誰も紙を見なかった。'),
       StoryLine('……肝臓ちゃん。', speakerId: 'stomach', face: _futsuu),
       StoryLine('それ、時間を分けてるだけだよね。', speakerId: 'stomach', face: _futsuu),
       StoryLine('気持ちは、分けられないよ。', speakerId: 'stomach', face: _futsuu),
       StoryLine('肝臓の彼女の手が、止まった。'),
-      StoryLine('……知っています。', speakerId: 'liver', face: _fuchou),
-      StoryLine('知っていて、それでも数字にするしかなかったんです。', speakerId: 'liver', face: _fuchou),
-      StoryLine('わたしは、処理することしかできないので。', speakerId: 'liver', face: _fuchou),
+      StoryLine('……知っています。', speakerId: 'liver', face: _futsuu),
+      StoryLine('知っていて、それでも数字にするしかなかったんです。', speakerId: 'liver', face: _futsuu),
+      StoryLine('わたしは、処理することしかできないので。', speakerId: 'liver', face: _futsuu),
       StoryLine('紙が、静かに床へ落ちた。'),
       StoryLine('拾おうとしたこちらの手を、彼女が押しとどめた。'),
       StoryLine('……いいんです。もう、いりません。', speakerId: 'liver', face: _futsuu),
+      StoryLine('その表に、わたしの名前だけ書いていなかったので。', speakerId: 'liver', face: _futsuu),
+      StoryLine('気づいたのは、机に置いたあとでした。', speakerId: 'liver', face: _futsuu),
     ],
   ),
   StoryEpisode(
@@ -411,7 +476,7 @@ const List<StoryEpisode> kStory = [
       StoryLine('選べるわけが、なかった。'),
       StoryLine('……ねえ。選ばないで。', speakerId: 'heart', face: _fuchou),
       StoryLine('けんかしてたのに、変だよね。でも、いま分かった。', speakerId: 'heart', face: _futsuu),
-      StoryLine('ひとりでも欠けたら、あなたが止まる。', speakerId: 'lung', face: _futsuu),
+      StoryLine('ひとりでも欠けたら、{name}さんが止まる。', speakerId: 'lung', face: _futsuu),
       StoryLine('わたしたちは、順番をつけられるものじゃなかった。', speakerId: 'brain', face: _futsuu),
       StoryLine('……争っていたのが、恥ずかしいです。', speakerId: 'liver', face: _futsuu),
       StoryLine(
@@ -429,15 +494,15 @@ const List<StoryEpisode> kStory = [
       StoryLine('勝った夜は、いつも静かだ。'),
       StoryLine('……ひとつ、聞いてもいい？', speakerId: 'brain', face: _futsuu),
       StoryLine('彼女は本を開いたまま、こちらを見なかった。'),
-      StoryLine('あなたが止まる日、わたしたちはどうなるのかな。', speakerId: 'brain', face: _futsuu),
-      StoryLine('部屋の温度が、少し下がった気がした。'),
+      StoryLine('{name}が止まる日、わたしたちはどうなるのかな。', speakerId: 'brain', face: _futsuu),
+      StoryLine('部屋の温度が、すこし下がった気がした。'),
       StoryLine('……順番は、たぶん決まってる。', speakerId: 'heart', face: _futsuu),
       StoryLine('わたしが止まって、そのあと肺が止まって。', speakerId: 'heart', face: _fuchou),
       StoryLine('いちばん最後まで起きてるのは、脳ちゃん。', speakerId: 'heart', face: _fuchou),
       StoryLine('脳の彼女の指が、ページの上で止まった。'),
-      StoryLine('……そう。わたしが、最後に見送る。', speakerId: 'brain', face: _fuchou),
-      StoryLine('あなたのことを、いちばん長く覚えていられる。', speakerId: 'brain', face: _fuchou),
-      StoryLine('それが「いちばん近い」ということなら。', speakerId: 'brain', face: _fuchou),
+      StoryLine('……そう。わたしが、最後に見送る。', speakerId: 'brain', face: _futsuu),
+      StoryLine('{name}のことを、いちばん長く覚えていられる。', speakerId: 'brain', face: _futsuu),
+      StoryLine('それが「いちばん近い」ということなら。', speakerId: 'brain', face: _futsuu),
       StoryLine('彼女は、はじめて本を閉じた。'),
       StoryLine('……そんな一番、いらなかった。', speakerId: 'brain', face: _fuchou),
       StoryLine('誰も、なにも言わなかった。'),
@@ -457,7 +522,11 @@ const List<StoryEpisode> kStory = [
       StoryLine('その順番、できるだけ後ろにずらす。', speakerId: 'stomach', face: _genki),
       StoryLine('それは、わたしたちだけでは無理です。', speakerId: 'liver', face: _futsuu),
       StoryLine('彼女はこちらを、まっすぐ見た。'),
-      StoryLine('あなたが歩いた分だけ、後ろにずれるんです。', speakerId: 'liver', face: _futsuu),
+      StoryLine(
+        '{name}さんが歩いた分だけ、後ろにずれるんです。',
+        speakerId: 'liver',
+        face: _futsuu,
+      ),
       StoryLine('一日ぶん歩けば、一日ぶん。', speakerId: 'liver', face: _futsuu),
       StoryLine('心臓の彼女が、笑った。'),
       StoryLine('……ね。取り合ってる場合じゃなかったでしょ。', speakerId: 'heart', face: _genki),
@@ -494,16 +563,16 @@ const List<StoryEpisode> kStory = [
       StoryLine('勝てなかったらどうなるかは、誰も言わなかった。'),
       StoryLine('……だから、いま言っておく。', speakerId: 'heart', face: _futsuu),
       StoryLine('五人が、順番に口を開いた。'),
-      StoryLine('わたしは、あなたの最初の息を知っています。', speakerId: 'lung', face: _futsuu),
-      StoryLine('わたしは、あなたが食べたもの全部でできてる。', speakerId: 'stomach', face: _futsuu),
-      StoryLine('わたしは、あなたが忘れたことまで覚えています。', speakerId: 'brain', face: _futsuu),
+      StoryLine('わたしは、{name}さんの最初の息を知っています。', speakerId: 'lung', face: _futsuu),
+      StoryLine('わたしは、{name}が食べたもの全部でできてる。', speakerId: 'stomach', face: _futsuu),
+      StoryLine('わたしは、{name}が忘れたことまで覚えてる。', speakerId: 'brain', face: _futsuu),
       StoryLine(
-        'わたしは、あなたが言わなかった無理を、全部処理しました。',
+        'わたしは、{name}さんが言わなかった無理を、全部処理しました。',
         speakerId: 'liver',
         face: _futsuu,
       ),
       StoryLine('最後に、心臓の彼女がこちらの手を取った。'),
-      StoryLine('……わたしは、生まれる前からあなたを呼んでた。', speakerId: 'heart', face: _futsuu),
+      StoryLine('……わたしは、生まれる前から{name}を呼んでた。', speakerId: 'heart', face: _futsuu),
       StoryLine('返事をもらうのに、ずいぶんかかったけどね。', speakerId: 'heart', face: _genki),
       StoryLine('明日の朝も、同じことを言わせて。', speakerId: 'heart', face: _genki),
     ],
@@ -525,7 +594,7 @@ const List<StoryEpisode> kStory = [
       StoryLine('……あなたを消せないことは、知っています。', speakerId: 'liver', face: _futsuu),
       StoryLine('でも、こちらも消えません。同じことです。', speakerId: 'liver', face: _futsuu),
       StoryLine('五人が、こちらの前に並んだ。'),
-      StoryLine('この人の一日は、ぜんぶ、わたしたちのもの。', speakerId: 'heart', face: _genki),
+      StoryLine('{name}の一日は、ぜんぶ、わたしたちのもの。', speakerId: 'heart', face: _genki),
       StoryLine('一秒だって、あなたにはやらない。', speakerId: 'heart', face: _genki),
       StoryLine('黒い山が、はじめて後ずさった。', enemyId: 'boss_seikatsu'),
     ],

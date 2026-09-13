@@ -158,6 +158,74 @@ void main() {
     });
   });
 
+  group('呼び名の差し込み', () {
+    test('{name} が呼び名に置き換わる', () {
+      expect(storyText('ねえ、{name}。', 'kikuri'), 'ねえ、kikuri。');
+      expect(storyText('{name}と{name}', 'A'), 'AとA');
+    });
+
+    test('名前が無いときは「あなた」に落ちる', () {
+      // 名前を消したデータが来ても、文が「、。」で壊れないこと
+      expect(storyText('ねえ、{name}。', ''), 'ねえ、あなた。');
+      expect(storyText('ねえ、{name}。', '   '), 'ねえ、あなた。');
+    });
+
+    test('書き損じた差し込みが残っていない', () {
+      // {namae} や {name のような打ち間違いは、そのまま画面に出てしまう
+      final all = [
+        for (final e in kStory) ...e.lines,
+        for (final e in kCharaStory) ...e.lines,
+      ];
+      for (final line in all) {
+        final rest = line.text.replaceAll('{name}', '');
+        expect(
+          rest.contains('{') || rest.contains('}'),
+          isFalse,
+          reason: '差し込みが壊れている: ${line.text}',
+        );
+      }
+    });
+  });
+
+  group('親密度の段', () {
+    test('♡1ではまだ告白しない', () {
+      // 最初の一回で言ってしまうと、♡5まで上げる理由がなくなる
+      for (final e in kCharaStory.where((e) => e.requiredHearts == 1)) {
+        for (final line in e.lines) {
+          expect(
+            line.text.contains('好き') || line.text.contains('すき'),
+            isFalse,
+            reason: '${e.title} が♡1で告白している',
+          );
+        }
+      }
+    });
+
+    test('♡5では全員が告白する', () {
+      for (final organ in kOrgans) {
+        final last = kCharaStory.firstWhere(
+          (e) => e.organId == organ.id && e.requiredHearts == 5,
+        );
+        expect(
+          last.lines.any(
+            (l) => l.text.contains('好き') || l.text.contains('すき'),
+          ),
+          isTrue,
+          reason: '${organ.name}の♡5に告白が無い',
+        );
+      }
+    });
+
+    test('全員に♡1から♡5まで揃っている', () {
+      for (final organ in kOrgans) {
+        final hearts = episodesForOrgan(organ.id)
+            .map((e) => e.requiredHearts)
+            .toList();
+        expect(hearts, [1, 2, 3, 4, 5], reason: '${organ.name}の段が抜けている');
+      }
+    });
+  });
+
   test('顔アイコンが全臓器・全状態ぶん揃っている', () {
     final missing = <String>[];
     for (final organ in kOrgans) {

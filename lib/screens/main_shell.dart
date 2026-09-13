@@ -101,6 +101,7 @@ class _MainShellState extends State<MainShell> {
         MaterialPageRoute(
           builder: (_) => StoryScreen(
             episode: first,
+            userName: state.userName,
             onRead: () => state.markEpisodeRead(first.key),
           ),
         ),

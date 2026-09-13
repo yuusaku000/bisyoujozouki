@@ -16,12 +16,16 @@ class StoryListScreen extends StatefulWidget {
     required this.clearedStage,
     required this.readEpisodes,
     required this.heartsOf,
+    required this.userName,
     this.onRead,
   });
 
   final int clearedStage;
   final Set<String> readEpisodes;
   final int Function(String organId) heartsOf;
+
+  /// セリフの中でこの人を呼ぶ名前。読む画面まで持っていく。
+  final String userName;
   final void Function(String key)? onRead;
 
   @override
@@ -47,6 +51,7 @@ class _StoryListScreenState extends State<StoryListScreen>
       MaterialPageRoute(
         builder: (_) => StoryScreen(
           episode: episode,
+          userName: widget.userName,
           onRead: () => widget.onRead?.call(key),
         ),
       ),
