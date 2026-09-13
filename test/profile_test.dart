@@ -17,11 +17,11 @@ void main() {
 
     test('名前とアイコンが保存される', () {
       final state = GameState.fresh()
-        ..userName = 'ゆうさく'
+        ..userName = 'kikuri'
         ..avatarId = 'enemy:ramen';
 
       final restored = GameState.decode(state.encode());
-      expect(restored.userName, 'ゆうさく');
+      expect(restored.userName, 'kikuri');
       expect(restored.avatarId, 'enemy:ramen');
     });
 

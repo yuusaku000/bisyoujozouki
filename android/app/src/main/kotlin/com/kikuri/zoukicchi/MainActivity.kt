@@ -1,4 +1,4 @@
-package com.yuusaku.zoukicchi
+package com.kikuri.zoukicchi
 
 import io.flutter.embedding.android.FlutterActivity
 
