@@ -673,6 +673,8 @@ class _HomeTabState extends State<HomeTab> with WidgetsBindingObserver {
     );
   }
 
+  final _menuKey = GlobalKey();
+
   /// 三本線。あしあとと設定をここにしまう。
   ///
   /// 横に並べていたら、名前が長い人の画面で右端が切れて押せなくなった。
@@ -680,6 +682,7 @@ class _HomeTabState extends State<HomeTab> with WidgetsBindingObserver {
     final ready = claimable(state).isNotEmpty;
 
     return GestureDetector(
+      key: _menuKey,
       onTap: _openMenu,
       behavior: HitTestBehavior.opaque,
       child: Padding(
@@ -695,26 +698,115 @@ class _HomeTabState extends State<HomeTab> with WidgetsBindingObserver {
     );
   }
 
+  /// 押した三本線のすぐ下に出す。
+  ///
+  /// 下からせり上がる紙にしていたが、押した場所と出る場所が離れていて、
+  /// どこを触った結果なのかが分からなかった。
   Future<void> _openMenu() async {
     Audio.instance.playSfx(Sfx.tap);
-    await showModalBottomSheet<void>(
+
+    final box = _menuKey.currentContext?.findRenderObject() as RenderBox?;
+    final overlay =
+        Overlay.of(context).context.findRenderObject() as RenderBox?;
+    if (box == null || overlay == null) return;
+
+    final corner = box.localToGlobal(
+      box.size.bottomRight(Offset.zero),
+      ancestor: overlay,
+    );
+    final done = kAchievements.where((a) => a.isDone(state)).length;
+
+    final picked = await showMenu<_HomeMenu>(
       context: context,
-      backgroundColor: Colors.transparent,
-      builder: (sheet) => _MenuSheet(
-        claimable: claimable(state).isNotEmpty,
-        done: kAchievements.where((a) => a.isDone(state)).length,
-        total: kAchievements.length,
-        onAchievements: () {
-          Navigator.pop(sheet);
-          _openAchievements();
-        },
-        onSettings: () {
-          Navigator.pop(sheet);
-          _openSettings();
-        },
+      color: AppColors.panelSoft,
+      elevation: 14,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppColors.goldDim),
+      ),
+      position: RelativeRect.fromLTRB(
+        corner.dx,
+        corner.dy + 4,
+        overlay.size.width - corner.dx,
+        0,
+      ),
+      items: [
+        _menuItem(
+          value: _HomeMenu.achievements,
+          icon: Icons.emoji_events,
+          color: AppColors.gold,
+          title: 'あしあと',
+          detail: '$done / ${kAchievements.length} 達成',
+          dot: claimable(state).isNotEmpty,
+        ),
+        _menuItem(
+          value: _HomeMenu.settings,
+          icon: Icons.settings,
+          color: AppColors.textMuted,
+          title: '設定',
+          detail: '音、戦闘の速さ、記録',
+          dot: false,
+        ),
+      ],
+    );
+    if (!mounted) return;
+
+    switch (picked) {
+      case _HomeMenu.achievements:
+        await _openAchievements();
+      case _HomeMenu.settings:
+        await _openSettings();
+      case null:
+        setState(() {});
+    }
+  }
+
+  PopupMenuItem<_HomeMenu> _menuItem({
+    required _HomeMenu value,
+    required IconData icon,
+    required Color color,
+    required String title,
+    required String detail,
+    required bool dot,
+  }) {
+    return PopupMenuItem<_HomeMenu>(
+      value: value,
+      height: 56,
+      child: Row(
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Icon(icon, size: 20, color: color),
+              if (dot)
+                const Positioned(top: -4, right: -4, child: UnreadDot(size: 8)),
+            ],
+          ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              Text(
+                detail,
+                style: const TextStyle(
+                  fontSize: 10,
+                  color: AppColors.textMuted,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
-    if (mounted) setState(() {});
   }
 
   Widget _pill(String text, {IconData? icon, Color? color}) {
@@ -1049,118 +1141,5 @@ class _HomeTabState extends State<HomeTab> with WidgetsBindingObserver {
   }
 }
 
-/// 三本線から出す紙。あしあとと設定だけ。
-///
-/// 増やしすぎると、ここに何があるのか覚えられなくなる。
-class _MenuSheet extends StatelessWidget {
-  const _MenuSheet({
-    required this.claimable,
-    required this.done,
-    required this.total,
-    required this.onAchievements,
-    required this.onSettings,
-  });
-
-  final bool claimable;
-  final int done;
-  final int total;
-  final VoidCallback onAchievements;
-  final VoidCallback onSettings;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: AppColors.panelGradient,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        border: Border(top: BorderSide(color: AppColors.goldDim, width: 1.2)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 14),
-            const Center(child: OrnateLabel('メニュー')),
-            const SizedBox(height: 10),
-            _row(
-              icon: Icons.emoji_events,
-              color: AppColors.gold,
-              title: 'あしあと',
-              detail: '$done / $total 達成',
-              dot: claimable,
-              onTap: onAchievements,
-            ),
-            _row(
-              icon: Icons.settings,
-              color: AppColors.textMuted,
-              title: '設定',
-              detail: '音、戦闘の速さ、記録',
-              dot: false,
-              onTap: onSettings,
-            ),
-            const SizedBox(height: 12),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _row({
-    required IconData icon,
-    required Color color,
-    required String title,
-    required String detail,
-    required bool dot,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(22, 14, 18, 14),
-          child: Row(
-            children: [
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Icon(icon, size: 22, color: color),
-                  if (dot)
-                    const Positioned(top: -4, right: -4, child: UnreadDot()),
-                ],
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    Text(
-                      detail,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textMuted,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(
-                Icons.chevron_right,
-                size: 20,
-                color: AppColors.textMuted,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
+/// 三本線から選べるもの。
+enum _HomeMenu { achievements, settings }
