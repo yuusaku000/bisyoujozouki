@@ -109,6 +109,37 @@ class _HomeTabState extends State<HomeTab> with WidgetsBindingObserver {
     return party[_selected.clamp(0, party.length - 1)];
   }
 
+  /// 振っているあいだに動いた横の距離。
+  double _dragged = 0;
+
+  /// 勢いと距離のどちらかが足りていれば、隣の子へ。
+  ///
+  /// 勢いだけで見ると、ゆっくり引いたときに0になって向きが決まらない。
+  /// 距離だけで見ると、軽く弾いただけでは動かない。
+  void _endDrag(DragEndDetails details) {
+    const flick = 240.0;
+    const reach = 60.0;
+    final speed = details.primaryVelocity ?? 0;
+
+    if (speed < -flick || _dragged < -reach) {
+      _pick(_selected + 1);
+    } else if (speed > flick || _dragged > reach) {
+      _pick(_selected - 1);
+    }
+  }
+
+  /// 見る子を替える。端では止まる。
+  void _pick(int index) {
+    final next = index.clamp(0, state.party.length - 1);
+    if (next == _selected) return;
+
+    Audio.instance.playSfx(Sfx.tap);
+    setState(() {
+      _selected = next;
+      _talkCount = 0;
+    });
+  }
+
   Future<void> _openMissions() async {
     await showModalBottomSheet<void>(
       context: context,
@@ -562,6 +593,10 @@ class _HomeTabState extends State<HomeTab> with WidgetsBindingObserver {
                     Audio.instance.playSfx(Sfx.tap);
                     setState(() => _talkCount++);
                   },
+                  // 横に振っても子を替えられる。下の顔を狙わなくて済む。
+                  onHorizontalDragStart: (_) => _dragged = 0,
+                  onHorizontalDragUpdate: (d) => _dragged += d.delta.dx,
+                  onHorizontalDragEnd: _endDrag,
                   behavior: HitTestBehavior.opaque,
                   child: Stack(
                     alignment: Alignment.bottomCenter,
@@ -897,13 +932,7 @@ class _HomeTabState extends State<HomeTab> with WidgetsBindingObserver {
           final selected = i == _selected;
           final condition = state.statusOf(organ.id).condition;
           return GestureDetector(
-            onTap: () {
-              Audio.instance.playSfx(Sfx.tap);
-              setState(() {
-                _selected = i;
-                _talkCount = 0;
-              });
-            },
+            onTap: () => _pick(i),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
