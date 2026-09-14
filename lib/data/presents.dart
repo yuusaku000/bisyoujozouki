@@ -154,16 +154,12 @@ const Map<Rarity, int> kGachaWeights = {
   Rarity.ssr: 4,
 };
 
-/// 天井。この回数まで引けば必ずSSRが出る。
-///
-/// 4%だと10連1回で出ない確率が7割近い。運が悪いだけで永久に出ないのは、
-/// 引いた回数が報われないということなので、上限を決めておく。
-const int kPityPulls = 40;
-
 const int kGachaCost = 1;
 const int kGachaTenCost = 10;
 
-/// 10連は必ずSR以上が1つ出る。ぜんぶNだったときの徒労感が大きすぎる。
+/// 10連はSRが1つ確定。ぜんぶNだったときの徒労感が大きすぎる。
+///
+/// 確定はこれだけ。回数で救済する仕組みは置いていない。
 List<Present> rollTen(Random random) {
   final results = [for (var i = 0; i < kGachaTenCost; i++) rollOne(random)];
   final hasHigh = results.any((p) => p.rarity.stars >= Rarity.sr.stars);
@@ -172,8 +168,6 @@ List<Present> rollTen(Random random) {
   }
   return results;
 }
-
-Present forceSsr(Random random) => _pickFrom(Rarity.ssr, random);
 
 Present rollOne(Random random) => _pickFrom(_rollRarity(random), random);
 

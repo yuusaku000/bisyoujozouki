@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 import '../data/lines.dart';
@@ -24,6 +26,12 @@ class GachaTab extends StatefulWidget {
 
 class _GachaTabState extends State<GachaTab> {
   GameState get state => widget.state;
+
+  /// 立つ子。画面を開くたびに引き直す。
+  ///
+  /// 毎フレーム引き直すと、触るたびに入れ替わって落ち着かない。
+  /// 開いているあいだは同じ子のままにする。
+  late final int _seed = Random().nextInt(1 << 30);
 
   Future<void> _pull({required bool ten}) async {
     final results = state.pull(ten: ten);
@@ -138,15 +146,13 @@ class _GachaTabState extends State<GachaTab> {
     );
   }
 
-  /// いちばん親密度の低い子。渡す相手が見えると、引く理由になる。
+  /// 立つ子。仲間の中から適当にひとり。
   ///
   /// まだ誰とも会っていないうちは心臓が立つ。
   Organ get _waiting {
     final party = state.party;
     if (party.isEmpty) return organById('heart');
-    return party.reduce(
-      (a, b) => state.heartsOf(b.id) < state.heartsOf(a.id) ? b : a,
-    );
+    return party[_seed % party.length];
   }
 
   @override
@@ -228,9 +234,7 @@ class _GachaTabState extends State<GachaTab> {
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          _pity(),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
           JewelButton(
             label: '1回ひく　チケット ×$kGachaCost',
             height: 50,
@@ -247,7 +251,7 @@ class _GachaTabState extends State<GachaTab> {
                 onPressed: state.canPullTen ? () => _pull(ten: true) : null,
               ),
               // 得なほうが分かるように、札を貼っておく。
-              Positioned(top: -7, right: 10, child: _tag('SR以上 確定')),
+              Positioned(top: -7, right: 10, child: _tag('SR 確定')),
             ],
           ),
         ],
@@ -283,39 +287,6 @@ class _GachaTabState extends State<GachaTab> {
           ),
         ],
       ),
-    );
-  }
-
-  /// 天井。実装はあったのに、画面に出ていなかった。
-  /// あと何回で確定するのかが見えないと、外れが続いたときに理由がなくなる。
-  Widget _pity() {
-    final left = state.pullsToPity;
-    final done = kPityPulls - left;
-
-    return Column(
-      children: [
-        Row(
-          children: [
-            const Icon(Icons.auto_awesome, size: 13, color: AppColors.gold),
-            const SizedBox(width: 6),
-            Text(
-              left == 0 ? '次はSSR確定' : 'あと $left 回でSSR確定',
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: AppColors.gold,
-              ),
-            ),
-            const Spacer(),
-            Text(
-              '$done / $kPityPulls',
-              style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
-            ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        JewelBar(value: done / kPityPulls, gradient: AppColors.goldGradient),
-      ],
     );
   }
 

@@ -78,7 +78,6 @@ class GameState {
     required this.keys,
     required this.tickets,
     required this.inventory,
-    required this.pullsSinceSsr,
     this.battleSpeed = BattleSpeed.normal,
     this.tutorialPhase = 0,
     this.devMode = false,
@@ -146,7 +145,6 @@ class GameState {
     keys: 0,
     tickets: 0,
     inventory: <String, int>{},
-    pullsSinceSsr: 0,
   );
 
   int coins;
@@ -176,9 +174,6 @@ class GameState {
   Map<String, int> inventory;
 
   /// 天井までの数え。SSRが出るたびに0に戻る。
-  int pullsSinceSsr;
-
-  int get pullsToPity => (kPityPulls - pullsSinceSsr).clamp(0, kPityPulls);
 
   final Random _random = Random();
 
@@ -195,20 +190,8 @@ class GameState {
     final cost = ten ? kGachaTenCost : kGachaCost;
     if (tickets < cost) return const [];
     tickets -= cost;
+    // 確定は10連のSRだけ。回数で救済する仕組みは置いていない。
     final results = ten ? rollTen(_random) : [rollOne(_random)];
-
-    // 天井。引いた回数が報われないままにしない。
-    for (var i = 0; i < results.length; i++) {
-      if (results[i].rarity == Rarity.ssr) {
-        pullsSinceSsr = 0;
-        continue;
-      }
-      pullsSinceSsr++;
-      if (pullsSinceSsr >= kPityPulls) {
-        results[i] = forceSsr(_random);
-        pullsSinceSsr = 0;
-      }
-    }
 
     for (final p in results) {
       inventory[p.id] = countOf(p.id) + 1;
@@ -341,7 +324,8 @@ class GameState {
     //
     // まだ会っていない子がいて3つ出そろわない日は、上乗せも無い。
     // 目標がひとつしかない日に鍵が出ると、そこで止まるのが得になる。
-    final bonus = todays.length == kMissionSlots && cleared.length == todays.length
+    final bonus =
+        todays.length == kMissionSlots && cleared.length == todays.length
         ? kAllMissionsBonus
         : const MissionReward();
     keys += bonus.keys;
@@ -413,7 +397,6 @@ class GameState {
     'sfxOn': sfxOn,
     'bgmOn': bgmOn,
     'inventory': inventory,
-    'pullsSinceSsr': pullsSinceSsr,
   });
 
   factory GameState.decode(String source) {
@@ -465,7 +448,6 @@ class GameState {
         (s) => s.name == map['battleSpeed'],
         orElse: () => BattleSpeed.normal,
       ),
-      pullsSinceSsr: map['pullsSinceSsr'] as int? ?? 0,
       inventory: ((map['inventory'] as Map<String, dynamic>?) ?? const {}).map(
         (k, v) => MapEntry(k, v as int),
       ),

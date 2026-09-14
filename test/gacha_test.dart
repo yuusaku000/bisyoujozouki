@@ -56,31 +56,28 @@ void main() {
       expect(state.tickets, 9);
     });
 
-    test('引き続ければ天井で必ずSSRが出る', () {
-      // 運が悪いだけで永久に出ないのは、引いた回数が報われないということ
-      final state = GameState.fresh()..tickets = kPityPulls;
-      var got = 0;
-      for (var i = 0; i < kPityPulls; i++) {
-        final res = state.pull(ten: false);
-        if (res.first.rarity == Rarity.ssr) got++;
-      }
-      expect(got, greaterThanOrEqualTo(1));
-    });
-
-    test('SSRが出ると天井の数えが戻る', () {
-      final state = GameState.fresh()..tickets = 200;
-      for (var i = 0; i < 100; i++) {
-        final res = state.pull(ten: false);
-        if (res.first.rarity == Rarity.ssr) {
-          expect(state.pullsSinceSsr, 0);
-          return;
-        }
+    test('10連はSRが1つ確定する', () {
+      // ぜんぶNで終わると、10枚使った手応えが残らない
+      final state = GameState.fresh()..tickets = 100;
+      for (var i = 0; i < 10; i++) {
+        final res = state.pull(ten: true);
+        expect(
+          res.any((p) => p.rarity.stars >= Rarity.sr.stars),
+          isTrue,
+          reason: '${i + 1}回目にSR以上が無い',
+        );
       }
     });
 
-    test('天井までの残りが保存される', () {
-      final state = GameState.fresh()..pullsSinceSsr = 17;
-      expect(GameState.decode(state.encode()).pullsSinceSsr, 17);
+    test('回数での救済は無い', () {
+      // 確定は10連のSRだけ。引いた回数では何も起きない
+      final state = GameState.fresh()..tickets = 500;
+      var ssr = 0;
+      for (var i = 0; i < 500; i++) {
+        if (state.pull(ten: false).first.rarity == Rarity.ssr) ssr++;
+      }
+      // 4%なので500回でも0回はありうるが、全部SSRになることはない
+      expect(ssr, lessThan(120), reason: '救済が残っている');
     });
 
     test('排出率の合計が100%になる', () {

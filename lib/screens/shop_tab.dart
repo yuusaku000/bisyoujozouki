@@ -20,12 +20,9 @@ class ShopTab extends StatelessWidget {
   static const int keyPrice = 25000;
   static const int ticketPrice = 2500;
 
-  /// まとめ買いは1割引き。
-  ///
-  /// 前は単品10枚ぶんと同じ値段で、押す回数が減るだけだった。
-  /// それでは「まとめて買う」を選ぶ理由がない。
-  static const int bundlePrice = 22500;
+  /// まとめ買い。値段は単品10枚ぶんと同じで、押す回数が減るだけ。
   static const int bundleSize = 10;
+  static const int bundlePrice = ticketPrice * bundleSize;
 
   void _buyBundle(BuildContext context) {
     const price = bundlePrice;
@@ -113,9 +110,8 @@ class ShopTab extends StatelessWidget {
                     icon: Icons.confirmation_number,
                     color: AppColors.gold,
                     name: 'ガチャチケット ×$bundleSize',
-                    detail: 'まとめて買うと1割引き',
+                    detail: '10連ぶんをまとめて',
                     price: bundlePrice,
-                    was: ticketPrice * bundleSize,
                     owned: state.tickets,
                     onBuy: () => _buyBundle(context),
                   ),
@@ -181,7 +177,6 @@ class ShopTab extends StatelessWidget {
     required int price,
     required int owned,
     required VoidCallback onBuy,
-    int? was,
     bool premium = false,
   }) {
     final affordable = state.coins >= price;
@@ -225,29 +220,12 @@ class ShopTab extends StatelessWidget {
                   ],
                 ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  if (was != null && was > price) ...[
-                    // 元の値段に線を引いておかないと、安いことが伝わらない。
-                    Text(
-                      formatCoins(was),
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: AppColors.textMuted,
-                        decoration: TextDecoration.lineThrough,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                  ],
-                  Text(
-                    '所持 $owned',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: AppColors.textMuted,
-                    ),
-                  ),
-                ],
+              Text(
+                '所持 $owned',
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: AppColors.textMuted,
+                ),
               ),
             ],
           ),
