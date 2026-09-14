@@ -22,13 +22,37 @@ void main() {
     });
 
     test('その先も下がることはない', () {
-      // 深いところは下限に張りつく。そこで上がって見えないこと
       var last = stageTopPercent(110);
-      for (var stage = 115; stage <= 400; stage += 5) {
+      for (var stage = 115; stage <= 600; stage += 5) {
         final now = stageTopPercent(stage);
         expect(now, lessThanOrEqualTo(last), reason: 'ステージ$stage');
         last = now;
       }
+    });
+
+    test('つなぎ目で跳ねない', () {
+      // 100階の手前と先で式が変わる。そこで数字が飛ばないこと
+      expect(
+        stageTopPercent(stageTop5.round() + 1),
+        closeTo(stageTopPercent(stageTop5.round()), 0.1),
+      );
+    });
+
+    test('100階から先は上がりにくい', () {
+      // 手前の50階ぶんと、その先の50階ぶんで、動く量を比べる
+      final before =
+          stageTopPercent(stageTop5.round() - 50) -
+          stageTopPercent(stageTop5.round());
+      final after =
+          stageTopPercent(stageTop5.round()) -
+          stageTopPercent(stageTop5.round() + 50);
+
+      expect(after, lessThan(before / 10), reason: '前=$before 後=$after');
+      // 半分になるのが目安
+      expect(
+        stageTopPercent(stageTop5.round() + stageTailHalfLife.round()),
+        closeTo(stageTopPercent(stageTop5.round()) / 2, 0.1),
+      );
     });
 
     test('はじめのうちは下のほう', () {

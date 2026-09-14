@@ -31,9 +31,26 @@ const double stageTop5 = 100;
 const double heartMedian = 2;
 const double heartTop5 = 15;
 
+/// 上位5%から先、順位が半分になるのに要る階数。
+///
+/// 正規分布をそのまま延ばすと、100階から先は数十階で桁が変わってしまう。
+/// そこまで行った人どうしの差はもっと詰まっているはずなので、
+/// ここから先はゆるやかに落とす。
+const double stageTailHalfLife = 50;
+
 /// 到達ステージの上位何％か。
-double stageTopPercent(int clearedStage) =>
-    _topPercent(clearedStage.toDouble(), stageMedian, stageTop5);
+double stageTopPercent(int clearedStage) {
+  final stage = clearedStage.toDouble();
+  if (stage <= stageTop5) {
+    return _topPercent(stage, stageMedian, stageTop5);
+  }
+
+  // 5%の続きから、階数に応じて半分ずつ。つなぎ目で跳ねないよう、
+  // 手前の式が出した値をそのまま起点にする。
+  final at5 = _topPercent(stageTop5, stageMedian, stageTop5);
+  final halves = (stage - stageTop5) / stageTailHalfLife;
+  return (at5 * pow(0.5, halves)).clamp(0.01, 100.0);
+}
 
 /// その子の親密度の上位何％か。[OrganStatus.heartLevel] を渡す。
 double heartTopPercent(double heartLevel) =>
