@@ -43,29 +43,53 @@ class Audio {
   /// 鳴らしはじめた曲。実際に鳴っているかは player の状態で見る。
   Bgm? _playing;
 
-  static const double bgmVolume = 0.45;
-  static const double sfxVolume = 0.8;
+  /// はじめの音量。BGMは背に回るので、効果音より控えめにする。
+  static const double defaultBgmVolume = 0.45;
+  static const double defaultSfxVolume = 0.8;
+
+  double _bgmVolume = defaultBgmVolume;
+  double _sfxVolume = defaultSfxVolume;
 
   bool get sfxOn => _sfxOn;
   bool get bgmOn => _bgmOn;
 
+  /// 実際に鳴らす音量。切ってあるか、つまみが0なら無音。
+  double get _effectiveBgm => _bgmOn ? _bgmVolume : 0;
+  double get _effectiveSfx => _sfxOn ? _sfxVolume : 0;
+
   /// 設定から呼ぶ。切った瞬間に止まり、点けた瞬間に戻る。
-  void apply({required bool sfx, required bool bgm}) {
+  ///
+  /// 止めるときは stop だけに頼らず、音量も0にする。止める命令が
+  /// 効かない実装に当たっても、それで無音にはなる。
+  void apply({
+    required bool sfx,
+    required bool bgm,
+    double? sfxVolume,
+    double? bgmVolume,
+  }) {
     _sfxOn = sfx;
     _bgmOn = bgm;
-    if (bgm) {
-      _resume();
+    if (sfxVolume != null) _sfxVolume = sfxVolume.clamp(0.0, 1.0);
+    if (bgmVolume != null) _bgmVolume = bgmVolume.clamp(0.0, 1.0);
+
+    final player = _bgmPlayer;
+    if (_effectiveBgm <= 0) {
+      _playing = null;
+      if (player != null) {
+        _quiet(() => player.setVolume(0));
+        _quiet(player.stop);
+      }
       return;
     }
-    _playing = null;
-    final player = _bgmPlayer;
-    if (player != null) _quiet(player.stop);
+
+    if (player != null) _quiet(() => player.setVolume(_effectiveBgm));
+    _resume();
   }
 
   void playSfx(Sfx sfx) {
     // 何か触られた合図でもある。止められていた曲をここで鳴らし直す。
     _resume();
-    if (!enabled || !_sfxOn) return;
+    if (!enabled || _effectiveSfx <= 0) return;
 
     final players = _sfxPlayers ??= [
       for (var i = 0; i < _sfxVoices; i++)
@@ -73,7 +97,7 @@ class Audio {
     ];
     final player = players[_voice];
     _voice = (_voice + 1) % players.length;
-    _quiet(() => player.play(AssetSource(sfx.asset), volume: sfxVolume));
+    _quiet(() => player.play(AssetSource(sfx.asset), volume: _effectiveSfx));
   }
 
   /// この画面ではこの曲、と宣言する。同じ曲が鳴っていれば何もしない。
@@ -84,7 +108,7 @@ class Audio {
 
   void _resume() {
     final wanted = _wanted;
-    if (!enabled || wanted == null || !_bgmOn) return;
+    if (!enabled || wanted == null || _effectiveBgm <= 0) return;
 
     final player = _bgmPlayer ??= AudioPlayer(playerId: 'zoukicchi_bgm');
     // 鳴らしはじめたのに止まっているなら、ブラウザに止められている。
@@ -94,7 +118,7 @@ class Audio {
     _playing = wanted;
     _quiet(() async {
       await player.setReleaseMode(ReleaseMode.loop);
-      await player.play(AssetSource(wanted.asset), volume: bgmVolume);
+      await player.play(AssetSource(wanted.asset), volume: _effectiveBgm);
     });
   }
 

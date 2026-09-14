@@ -52,7 +52,12 @@ class _MainShellState extends State<MainShell> {
 
     // 曲は「流したい」とだけ伝えておく。ブラウザは画面を触るまで
     // 鳴らしてくれないので、実際に始まるのは最初のタップのとき。
-    Audio.instance.apply(sfx: state.sfxOn, bgm: state.bgmOn);
+    Audio.instance.apply(
+      sfx: state.sfxOn,
+      bgm: state.bgmOn,
+      sfxVolume: state.sfxVolume,
+      bgmVolume: state.bgmVolume,
+    );
     Audio.instance.playBgm(Bgm.home);
 
     setState(() => _state = state);
@@ -83,7 +88,12 @@ class _MainShellState extends State<MainShell> {
     setState(() {});
     final state = _state;
     if (state == null) return;
-    Audio.instance.apply(sfx: state.sfxOn, bgm: state.bgmOn);
+    Audio.instance.apply(
+      sfx: state.sfxOn,
+      bgm: state.bgmOn,
+      sfxVolume: state.sfxVolume,
+      bgmVolume: state.bgmVolume,
+    );
     _store.save(state);
   }
 

@@ -1,12 +1,13 @@
 import 'dart:convert';
 import 'dart:math';
 
-import '../data/organs.dart';
 import '../data/chara_story.dart';
 import '../data/enemies.dart';
 import '../data/missions.dart';
 import '../data/presents.dart';
+import '../data/organs.dart';
 import '../data/story.dart';
+import '../services/audio.dart';
 import 'daily_input.dart';
 import 'mission.dart';
 import 'present.dart';
@@ -83,6 +84,8 @@ class GameState {
     this.devMode = false,
     this.sfxOn = true,
     this.bgmOn = true,
+    this.sfxVolume = Audio.defaultSfxVolume,
+    this.bgmVolume = Audio.defaultBgmVolume,
     this.userName = '',
     this.avatarId = 'organ:heart',
     this.totalSteps = 0,
@@ -131,6 +134,10 @@ class GameState {
   /// 音のあるゲームだと気づかれないまま切られているのが、いちばん惜しい。
   bool sfxOn;
   bool bgmOn;
+
+  /// 音の大きさ。0から1まで。0にすると、切ったのと同じで無音になる。
+  double sfxVolume;
+  double bgmVolume;
 
   factory GameState.fresh() => GameState(
     coins: 0,
@@ -396,6 +403,8 @@ class GameState {
     'devMode': devMode,
     'sfxOn': sfxOn,
     'bgmOn': bgmOn,
+    'sfxVolume': sfxVolume,
+    'bgmVolume': bgmVolume,
     'inventory': inventory,
   });
 
@@ -444,6 +453,11 @@ class GameState {
       devMode: map['devMode'] as bool? ?? false,
       sfxOn: map['sfxOn'] as bool? ?? true,
       bgmOn: map['bgmOn'] as bool? ?? true,
+      // 音量を知らない古いセーブは、これまでと同じ大きさで読む。
+      sfxVolume:
+          (map['sfxVolume'] as num?)?.toDouble() ?? Audio.defaultSfxVolume,
+      bgmVolume:
+          (map['bgmVolume'] as num?)?.toDouble() ?? Audio.defaultBgmVolume,
       battleSpeed: BattleSpeed.values.firstWhere(
         (s) => s.name == map['battleSpeed'],
         orElse: () => BattleSpeed.normal,

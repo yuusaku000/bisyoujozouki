@@ -7,6 +7,7 @@ import '../data/story.dart';
 import '../models/game_state.dart';
 import '../models/organ.dart';
 import '../widgets/coin_text.dart';
+import '../services/audio.dart';
 import '../widgets/ornate.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -65,6 +66,63 @@ class _SettingsScreenState extends State<SettingsScreen> {
           onChanged: (v) => _edit(() => set(v)),
         ),
       ],
+    );
+  }
+
+  /// 音の大きさのつまみ。
+  ///
+  /// 動かしている間は音だけ合わせ、保存は指を離したときにする。
+  /// 一目盛りごとに書き込むと、動かすたびに保存が走る。
+  Widget _volumeRow(double value, bool on, void Function(double) set) {
+    return Opacity(
+      opacity: on ? 1 : 0.4,
+      child: Row(
+        children: [
+          const SizedBox(width: 2),
+          Icon(
+            value <= 0 ? Icons.volume_off : Icons.volume_up,
+            size: 16,
+            color: AppColors.textMuted,
+          ),
+          Expanded(
+            child: Slider(
+              value: value.clamp(0.0, 1.0),
+              activeColor: AppColors.rose,
+              inactiveColor: AppColors.hollow,
+              onChanged: on
+                  ? (v) {
+                      setState(() => set(v));
+                      _pushAudio();
+                    }
+                  : null,
+              // 指を離したときだけ保存する。
+              onChangeEnd: on ? (_) => widget.onChanged() : null,
+            ),
+          ),
+          SizedBox(
+            width: 38,
+            child: Text(
+              '${(value * 100).round()}',
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textMuted,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// いまの設定を音のほうへ流す。保存はしない。
+  void _pushAudio() {
+    Audio.instance.apply(
+      sfx: state.sfxOn,
+      bgm: state.bgmOn,
+      sfxVolume: state.sfxVolume,
+      bgmVolume: state.bgmVolume,
     );
   }
 
@@ -183,8 +241,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   state.sfxOn,
                   (v) => state.sfxOn = v,
                 ),
+                _volumeRow(
+                  state.sfxVolume,
+                  state.sfxOn,
+                  (v) => state.sfxVolume = v,
+                ),
                 const Divider(height: 22, color: AppColors.goldDim),
-                _soundRow('BGM', '流れつづける曲', state.bgmOn, (v) => state.bgmOn = v),
+                _soundRow(
+                  'BGM',
+                  '流れつづける曲',
+                  state.bgmOn,
+                  (v) => state.bgmOn = v,
+                ),
+                _volumeRow(
+                  state.bgmVolume,
+                  state.bgmOn,
+                  (v) => state.bgmVolume = v,
+                ),
               ],
             ),
           ),

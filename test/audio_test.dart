@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zoukicchi/data/sounds.dart';
 import 'package:zoukicchi/models/game_state.dart';
+import 'package:zoukicchi/services/audio.dart';
 
 void main() {
   group('音のファイル', () {
@@ -66,6 +67,37 @@ void main() {
 
       expect(restored.sfxOn, isFalse);
       expect(restored.bgmOn, isFalse);
+    });
+
+    test('はじめの音量は決められた大きさ', () {
+      final state = GameState.fresh();
+
+      expect(state.sfxVolume, Audio.defaultSfxVolume);
+      expect(state.bgmVolume, Audio.defaultBgmVolume);
+    });
+
+    test('音量が保存される', () {
+      final state = GameState.fresh()
+        ..sfxVolume = 0.25
+        ..bgmVolume = 0.0;
+
+      final restored = GameState.decode(state.encode());
+
+      expect(restored.sfxVolume, 0.25);
+      expect(restored.bgmVolume, 0.0);
+    });
+
+    test('音量を知らない古いセーブは、これまでの大きさで読む', () {
+      final old = GameState.fresh().encode();
+      final stripped = old.replaceAll(
+        RegExp(r'"(sfx|bgm)Volume":[0-9.]+,'),
+        '',
+      );
+
+      final restored = GameState.decode(stripped);
+
+      expect(restored.sfxVolume, Audio.defaultSfxVolume);
+      expect(restored.bgmVolume, Audio.defaultBgmVolume);
     });
 
     test('音を知らない古いセーブは、鳴る側で読む', () {
