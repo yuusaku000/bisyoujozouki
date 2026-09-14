@@ -117,11 +117,22 @@ void main() {
       expect(first, isNot(second));
     });
 
+    test('称号が重複していない', () {
+      // 同じ呼び名が二度出ると、上がったのか下がったのか分からない
+      final seen = _rankSuffixesSeen();
+      expect(seen.length, greaterThan(10), reason: '称号が少なすぎる');
+      expect(seen.toSet().length, seen.length, reason: '$seen');
+    });
+
     test('接尾辞を使い切っても名前が作られる', () {
-      final enemy = enemyForStage(101);
-      final deep = enemyNameForStage(101);
+      // 1000階はボス。ここまで来ると称号の一覧を使い切っている
+      final enemy = enemyForStage(1000);
+      final deep = enemyNameForStage(1000);
+
       expect(deep, startsWith(enemy.name));
       expect(deep.length, greaterThan(enemy.name.length));
+      // 使い切った先は、最後の称号に番号がつく
+      expect(RegExp(r'[0-9]+$').hasMatch(deep), isTrue, reason: deep);
     });
   });
 
@@ -249,4 +260,21 @@ void main() {
   test('はじめの健康度は80', () {
     expect(GameState.fresh().statusOf('heart').health, 80);
   });
+}
+
+/// 深夜のラーメンに付いた称号を、出てくる順に集める。
+///
+/// 一覧そのものは外から見えないので、実際に付く名前から拾う。
+List<String> _rankSuffixesSeen() {
+  const base = '深夜のラーメン';
+  final out = <String>[];
+  for (var stage = 1; stage <= 400; stage++) {
+    final name = enemyNameForStage(stage);
+    if (!name.startsWith(base)) continue;
+    final suffix = name.substring(base.length);
+    if (suffix.isEmpty) continue;
+    if (RegExp(r'[0-9]+$').hasMatch(suffix)) break; // 使い切ったあと
+    out.add(suffix);
+  }
+  return out;
 }

@@ -96,15 +96,58 @@ int encounterIndexOf(int stage) {
   return count;
 }
 
-// 出てくるたびに呼び名が変わる。同じ名前が並ぶと、進んでいる実感が薄れる。
-const List<String> _rankSuffixes = ['', '・改', '・覚醒', '・真', '・極', '・煉獄', '・災禍'];
+/// 出てくるたびに変わる呼び名。
+///
+/// 同じ名前が並ぶと、進んでいる実感が薄れる。先頭は空で、1度目は
+/// そのままの名前で出す。あとは大げさになっていく順に並べてある。
+///
+/// 強さとは連動していない。強さはステージ番号だけで決まるので、
+/// 同じ「・改」でも相手が違えば数字はまるで違う。ここは見栄えの話。
+const List<String> _rankSuffixes = [
+  '',
+  // 強くなっただけ
+  '・改',
+  '・覚醒',
+  '・真',
+  '・極',
+  // 荒ぶる
+  '・烈',
+  '・轟',
+  '・煉獄',
+  '・災禍',
+  // 位をもつ
+  '・四天王',
+  '・覇王',
+  '・魔王',
+  '・邪神',
+  // 堕ちる
+  '・大罪',
+  '・原罪',
+  '・堕天',
+  '・堕天使',
+  // 神めく
+  '・天使',
+  '・熾天使',
+  '・神域',
+  '・神格',
+  // おしまい
+  '・深淵',
+  '・虚無',
+  '・混沌',
+  '・黙示',
+  '・終焉',
+  '・永劫',
+  '・輪廻',
+  '・無間',
+];
 
 String enemyNameForStage(int stage) {
   final enemy = enemyForStage(stage);
   final rank = encounterIndexOf(stage);
   if (rank <= 0) return enemy.name;
-  final suffix = rank < _rankSuffixes.length
-      ? _rankSuffixes[rank]
-      : '・災禍${rank - _rankSuffixes.length + 2}';
-  return '${enemy.name}$suffix';
+  if (rank < _rankSuffixes.length) return '${enemy.name}${_rankSuffixes[rank]}';
+
+  // 使い切ったら、最後の称号に番号を足して続ける。何周しても名前が尽きない。
+  final extra = rank - _rankSuffixes.length + 2;
+  return '${enemy.name}${_rankSuffixes.last}$extra';
 }
