@@ -4,12 +4,14 @@ import 'package:flutter/services.dart';
 import '../data/achievements.dart';
 import '../data/avatars.dart';
 import '../data/chara_story.dart';
+import '../data/ranking.dart';
 import '../data/story.dart';
 import '../data/theme.dart';
 import '../models/game_state.dart';
 import '../widgets/coin_text.dart';
 import '../widgets/ornate.dart';
 import '../widgets/progress_ring.dart';
+import 'ranking_screen.dart';
 
 /// あなたの記録。
 ///
@@ -140,6 +142,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const Center(child: OrnateLabel('これまで')),
           const SizedBox(height: 12),
           _records(),
+          const SizedBox(height: 12),
+          _rankingButton(context),
           const SizedBox(height: 22),
           const Center(child: OrnateLabel('アイコン')),
           const SizedBox(height: 12),
@@ -232,6 +236,66 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   // ── 記録 ──────────────────────────────────────────────
+
+  /// 世界での立ち位置へ。いまの順位を出しておかないと、押す気にならない。
+  Widget _rankingButton(BuildContext context) {
+    final percent = stageTopPercent(state.clearedStage);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => RankingScreen(state: state)),
+        ),
+        child: OrnatePanel(
+          padding: const EdgeInsets.fromLTRB(14, 13, 12, 13),
+          borderColor: AppColors.gold,
+          child: Row(
+            children: [
+              const Icon(Icons.public, size: 22, color: AppColors.gold),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'ランキング',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    Text(
+                      '世界のどのあたりにいるか',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                '上位 ${formatPercent(percent)}%',
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.gold,
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right,
+                size: 20,
+                color: AppColors.textMuted,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _records() {
     final mainRead = kStory.where((e) => state.readEpisodes.contains(e.key));

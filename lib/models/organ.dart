@@ -88,31 +88,65 @@ class OrganStatus {
   /// プレゼントで貯まる。運動では上がらない。
   final int affection;
 
+  /// 物語が開ききるハートの数。ここまでで話は全部読める。
+  ///
+  /// 上限ではない。この先は ♡5+1、♡5+2 と足されていく。
   static const int maxHearts = 5;
 
   /// ハート1つぶんに必要な累計。先へ行くほど遠くなる。
   static const List<int> heartThresholds = [0, 40, 110, 230, 420, 700];
 
+  /// ♡5から先、ひとつ上がるのに要る量。
+  ///
+  /// 表のきざみは 40・70・120・190・280 と、増え方が 20 ずつ大きくなる。
+  /// その伸び方をそのまま延ばす。
+  static int _gapAfter(int heart) => 280 + 110 * (heart - 4);
+
+  /// そのハート数に届くのに要る累計。表の外も計算で出す。
+  static int thresholdFor(int heart) {
+    if (heart <= 0) return 0;
+    if (heart < heartThresholds.length) return heartThresholds[heart];
+
+    var total = heartThresholds.last;
+    for (var h = heartThresholds.length - 1; h < heart; h++) {
+      total += _gapAfter(h);
+    }
+    return total;
+  }
+
+  /// ♡の数。5で止まらない。
   int get hearts {
     var count = 0;
-    for (var i = 1; i < heartThresholds.length; i++) {
-      if (affection >= heartThresholds[i]) count = i;
+    while (affection >= thresholdFor(count + 1)) {
+      count++;
     }
     return count;
   }
 
-  bool get heartsMaxed => hearts >= maxHearts;
+  /// 物語を開ききったか。ハートの上限ではない。
+  bool get storyDone => hearts >= maxHearts;
+
+  /// ♡5から先の上乗せぶん。0なら上乗せ無し。
+  int get extraHearts => hearts <= maxHearts ? 0 : hearts - maxHearts;
+
+  /// 画面に出す形。♡5までは数だけ、その先は「5+2」と足して見せる。
+  String get heartLabel =>
+      extraHearts == 0 ? '$hearts' : '$maxHearts+$extraHearts';
 
   /// いまのハートの中での進み具合。
   double get heartProgress {
-    if (heartsMaxed) return 1;
-    final from = heartThresholds[hearts];
-    final to = heartThresholds[hearts + 1];
+    final from = thresholdFor(hearts);
+    final to = thresholdFor(hearts + 1);
     return ((affection - from) / (to - from)).clamp(0.0, 1.0);
   }
 
-  int get affectionToNextHeart =>
-      heartsMaxed ? 0 : heartThresholds[hearts + 1] - affection;
+  int get affectionToNextHeart => thresholdFor(hearts + 1) - affection;
+
+  /// 小数まで入れたハートの段。順位を出すのに使う。
+  ///
+  /// 貯まった値そのもので順位を出すと、先へ行くほど1段が重いせいで、
+  /// ♡1から♡5までがひとかたまりに潰れてしまう。
+  double get heartLevel => hearts + heartProgress;
 
   OrganStatus gifted(int points) => OrganStatus(
     health: health,

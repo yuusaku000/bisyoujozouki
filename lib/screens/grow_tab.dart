@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 import '../data/lines.dart';
@@ -350,14 +352,28 @@ class _GrowTabState extends State<GrowTab> {
                   ),
                 ),
                 const SizedBox(height: 3),
+                // 一覧の下なので、5つで打ち止め。伸ばすと顔の幅を越える。
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    for (var h = 0; h < status.hearts; h++)
+                    for (
+                      var h = 0;
+                      h < min(status.hearts, OrganStatus.maxHearts);
+                      h++
+                    )
                       const Icon(
                         Icons.favorite,
                         size: 7,
                         color: AppColors.rose,
+                      ),
+                    if (status.extraHearts > 0)
+                      const Text(
+                        '+',
+                        style: TextStyle(
+                          fontSize: 8,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.rose,
+                        ),
                       ),
                   ],
                 ),
@@ -453,6 +469,9 @@ class _GrowTabState extends State<GrowTab> {
     );
   }
 
+  /// ♡は5つまで並べ、その先は数で足す。
+  ///
+  /// 20個並べると行に収まらないし、いくつあるのかも数えられない。
   Widget _hearts(OrganStatus status) {
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -466,6 +485,18 @@ class _GrowTabState extends State<GrowTab> {
               color: i < status.hearts
                   ? AppColors.rose
                   : AppColors.textMuted.withValues(alpha: 0.5),
+            ),
+          ),
+        if (status.extraHearts > 0)
+          Padding(
+            padding: const EdgeInsets.only(left: 4),
+            child: Text(
+              '+${status.extraHearts}',
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w900,
+                color: AppColors.rose,
+              ),
             ),
           ),
       ],
@@ -488,9 +519,7 @@ class _GrowTabState extends State<GrowTab> {
             ),
             const Spacer(),
             Text(
-              status.heartsMaxed
-                  ? 'これ以上ないくらい'
-                  : 'つぎの♡まで ${status.affectionToNextHeart}',
+              'つぎの♡まで ${status.affectionToNextHeart}',
               style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
             ),
           ],

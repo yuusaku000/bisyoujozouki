@@ -135,12 +135,14 @@ void main() {
       expect(state.inventory.containsKey('water'), isFalse);
     });
 
-    test('ハートは5つまで', () {
-      const maxed = OrganStatus(affection: 99999);
+    test('物語が開ききっても、ハートは伸び続ける', () {
+      // ♡5は終わりではない。そこで止まると、渡すものの行き先が無くなる
+      const deep = OrganStatus(affection: 99999);
 
-      expect(maxed.hearts, OrganStatus.maxHearts);
-      expect(maxed.heartsMaxed, isTrue);
-      expect(maxed.affectionToNextHeart, 0);
+      expect(deep.storyDone, isTrue);
+      expect(deep.hearts, greaterThan(OrganStatus.maxHearts));
+      expect(deep.extraHearts, deep.hearts - OrganStatus.maxHearts);
+      expect(deep.affectionToNextHeart, greaterThan(0));
     });
 
     test('しきい値ちょうどでハートが増える', () {
