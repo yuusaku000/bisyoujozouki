@@ -119,7 +119,7 @@ class ShopTab extends StatelessWidget {
                   const Center(child: OrnateLabel('鍵の集めかた')),
                   const SizedBox(height: 12),
                   _hint('ボスを倒す', '10ステージごとのボスが1個落とします'),
-                  _hint('きつい目標を達成する', '8000歩、階段25階、生活を全部整える'),
+                  _hint('きつい目標を達成する', '8000歩、階段12階、生活を全部整える'),
                   _hint('3つの目標をそろえる', 'その日の目標を全部達成すると1個'),
                   _hint('ここで買う', 'コインは歩いた分だけ貯まります'),
                 ],

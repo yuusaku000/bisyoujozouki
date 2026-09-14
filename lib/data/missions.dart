@@ -19,6 +19,10 @@ enum MissionKind {
 /// 目標の一覧。きつい条件ほど鍵が出る。
 ///
 /// 種類ごとに、やさしい順に並べてある。
+///
+/// 階段の段数は、健康度の目安（[DailyInput.stairsGoal] = 5階）を
+/// またぐように置いてある。いちばんやさしいものが目安を超えていると、
+/// ふつうの日に何ひとつ達成できない。
 const List<Mission> kMissions = [
   // ── あるく ──
   Mission(
@@ -54,8 +58,8 @@ const List<Mission> kMissions = [
     id: 'stairs_light',
     requires: ['lung'],
     kind: MissionKind.climb,
-    label: '階段を5階のぼる',
-    detail: '一駅ぶんの階段くらい',
+    label: '階段を3階のぼる',
+    detail: '駅の階段ひとつぶん',
     reward: MissionReward(tickets: 1),
     check: _stairsLight,
   ),
@@ -63,7 +67,7 @@ const List<Mission> kMissions = [
     id: 'stairs',
     requires: ['lung'],
     kind: MissionKind.climb,
-    label: '階段を10階のぼる',
+    label: '階段を6階のぼる',
     detail: 'エレベーターを使わない',
     reward: MissionReward(tickets: 2),
     check: _stairs,
@@ -72,7 +76,7 @@ const List<Mission> kMissions = [
     id: 'stairs_hard',
     requires: ['lung'],
     kind: MissionKind.climb,
-    label: '階段を25階のぼる',
+    label: '階段を12階のぼる',
     detail: '脚が笑う。鍵が手に入る',
     reward: MissionReward(keys: 1),
     check: _stairsHard,
@@ -161,9 +165,9 @@ bool _goal(DailyInput input, int goal) => input.steps >= goal;
 bool _goalAndHalf(DailyInput input, int goal) =>
     input.steps >= (goal * 1.5).round();
 bool _longWalk(DailyInput input, int goal) => input.steps >= 8000;
-bool _stairsLight(DailyInput input, int goal) => input.stairs >= 5;
-bool _stairs(DailyInput input, int goal) => input.stairs >= 10;
-bool _stairsHard(DailyInput input, int goal) => input.stairs >= 25;
+bool _stairsLight(DailyInput input, int goal) => input.stairs >= 3;
+bool _stairs(DailyInput input, int goal) => input.stairs >= 6;
+bool _stairsHard(DailyInput input, int goal) => input.stairs >= 12;
 bool _eat(DailyInput input, int goal) => input.ateWell;
 bool _rest(DailyInput input, int goal) => input.rested;
 bool _sleep(DailyInput input, int goal) => input.sleptWell;

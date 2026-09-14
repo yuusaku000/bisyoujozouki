@@ -799,57 +799,63 @@ class _HomeTabState extends State<HomeTab> with WidgetsBindingObserver {
   Widget _vitalCard(OrganStatus status) {
     final vitals = kVitals.read(_organ, status, state.dayCount);
 
-    return Container(
-      constraints: const BoxConstraints(maxWidth: 102),
-      padding: const EdgeInsets.fromLTRB(9, 7, 9, 6),
-      decoration: BoxDecoration(
-        color: AppColors.hollow.withValues(alpha: 0.82),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _organ.accent.withValues(alpha: 0.7)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (final vital in vitals) ...[
-            Text(
-              vital.label,
-              style: const TextStyle(fontSize: 9, color: AppColors.textMuted),
-            ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  vital.value,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w900,
-                    height: 1.15,
-                    color: vital.inRange
-                        ? AppColors.textPrimary
-                        : AppColors.fuchou,
-                  ),
-                ),
-                if (vital.unit.isNotEmpty) ...[
-                  const SizedBox(width: 2),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 2),
-                    child: Text(
-                      vital.unit,
-                      style: const TextStyle(
-                        fontSize: 9,
-                        color: AppColors.textMuted,
-                      ),
+    // 枠のどこを押しても詳細へ。「詳細」の文字だけだと的が小さすぎる。
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        Audio.instance.playSfx(Sfx.tap);
+        _openVitals();
+      },
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 102),
+        padding: const EdgeInsets.fromLTRB(9, 7, 9, 6),
+        decoration: BoxDecoration(
+          color: AppColors.hollow.withValues(alpha: 0.82),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: _organ.accent.withValues(alpha: 0.7)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final vital in vitals) ...[
+              Text(
+                vital.label,
+                style: const TextStyle(fontSize: 9, color: AppColors.textMuted),
+              ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    vital.value,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                      height: 1.15,
+                      color: vital.inRange
+                          ? AppColors.textPrimary
+                          : AppColors.fuchou,
                     ),
                   ),
+                  if (vital.unit.isNotEmpty) ...[
+                    const SizedBox(width: 2),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 2),
+                      child: Text(
+                        vital.unit,
+                        style: const TextStyle(
+                          fontSize: 9,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
-              ],
-            ),
-            const SizedBox(height: 6),
-          ],
-          GestureDetector(
-            onTap: _openVitals,
-            child: const Row(
+              ),
+              const SizedBox(height: 6),
+            ],
+            // 押せることの目印。受け口は枠の全体。
+            const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
@@ -863,8 +869,8 @@ class _HomeTabState extends State<HomeTab> with WidgetsBindingObserver {
                 Icon(Icons.chevron_right, size: 13, color: AppColors.gold),
               ],
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
