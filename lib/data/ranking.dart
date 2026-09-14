@@ -90,12 +90,17 @@ double _erfc(double x) {
 
 /// 「上位 12.4%」の数のところ。
 ///
-/// 桁を固定すると、上のほうで 0% と出たり、下のほうで 54.0% と
-/// うるさくなったりする。大きいときほど粗く出す。
+/// 桁を固定すると、上のほうで 0% と出たり、まん中あたりで 54.0% と
+/// うるさくなったりする。数が小さいときほど細かく出す。
+///
+/// 99%より上でも小数を残すのは、はじめのうちに止まって見えないため。
+/// 整数だけだと、0階から10階までが全部「100%」になってしまう。
 String formatPercent(double percent) {
+  if (percent >= 99) return percent.toStringAsFixed(1);
   if (percent >= 10) return percent.toStringAsFixed(0);
-  if (percent >= 1) return percent.toStringAsFixed(1);
-  return percent.toStringAsFixed(2);
+  if (percent >= 2) return percent.toStringAsFixed(1);
+  if (percent >= 0.2) return percent.toStringAsFixed(2);
+  return percent.toStringAsFixed(3);
 }
 
 /// 順位につける呼び名。数字だけだと、それが良いのか分からない。

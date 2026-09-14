@@ -83,10 +83,27 @@ void main() {
     });
 
     test('桁は大きさに合わせて変わる', () {
-      // 上のほうで 0% と出たり、下のほうで 54.0% とうるさくなったりしない
+      // まん中で 54.0% とうるさくならず、端では 0% や 100% で潰れない
       expect(formatPercent(54.3), '54');
       expect(formatPercent(4.27), '4.3');
       expect(formatPercent(0.412), '0.41');
+      expect(formatPercent(99.887), '99.9');
+      expect(formatPercent(0.0781), '0.078');
+    });
+
+    test('数階進めば必ず表示が動く', () {
+      // 特定の階で一気に上がるのではなく、少しずつ上がっていくこと。
+      // 桁の切り方が粗いと、何十階も同じ数字のまま止まって見える
+      const limit = 5;
+      var flat = 0;
+      var last = formatPercent(stageTopPercent(0));
+
+      for (var stage = 1; stage <= 400; stage++) {
+        final now = formatPercent(stageTopPercent(stage));
+        flat = now == last ? flat + 1 : 0;
+        expect(flat, lessThan(limit), reason: 'ステージ$stage あたりで止まっている');
+        last = now;
+      }
     });
 
     test('呼び名は上位ほど良くなる', () {
