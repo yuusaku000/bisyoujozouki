@@ -73,14 +73,21 @@ void main() {
   group('ミッション', () {
     test('毎日3つ出る', () {
       for (var day = 1; day <= 40; day++) {
-        expect(missionsForDay(day, _everyone).length, kMissionSlots, reason: '$day日目');
+        expect(
+          missionsForDay(day, _everyone).length,
+          kMissionSlots,
+          reason: '$day日目',
+        );
       }
     });
 
     test('あるく・のぼる・ととのえるが1つずつ', () {
       // 無作為に引くと、歩く目標ばかりの日ができてしまう
       for (var day = 1; day <= 40; day++) {
-        final kinds = missionsForDay(day, _everyone).map((m) => m.kind).toList();
+        final kinds = missionsForDay(
+          day,
+          _everyone,
+        ).map((m) => m.kind).toList();
         expect(kinds, MissionKind.values, reason: '$day日目の内訳が偏っている');
       }
     });
@@ -154,9 +161,7 @@ void main() {
 
     test('達成した目標だけ報酬が入る', () {
       final state = _fullParty();
-      final care = state.missions.firstWhere(
-        (m) => m.kind == MissionKind.care,
-      );
+      final care = state.missions.firstWhere((m) => m.kind == MissionKind.care);
       // 生活だけ整えた日。歩数も階段も0なので、残り2つは達成しない
       state.today = const DailyInput(
         ateWell: true,
@@ -167,7 +172,7 @@ void main() {
       final result = state.endDay();
 
       expect(result.clearedMissions.map((m) => m.id), [care.id]);
-      expect(state.keys + state.tickets, greaterThan(0));
+      expect(state.tickets, greaterThan(0));
       expect(result.allMissionsCleared, isFalse);
     });
 
@@ -180,6 +185,7 @@ void main() {
       expect(result.clearedMissions, isEmpty);
       expect(state.keys, 0);
       expect(state.tickets, 0);
+      expect(result.missionCoins, 0);
       expect(result.allMissionsCleared, isFalse);
     });
 
@@ -191,8 +197,11 @@ void main() {
 
       expect(result.clearedMissions.length, kMissionSlots);
       expect(result.allMissionsCleared, isTrue);
-      expect(state.keys, greaterThanOrEqualTo(kAllMissionsBonus.keys));
       expect(state.tickets, greaterThanOrEqualTo(kAllMissionsBonus.tickets));
+      expect(
+        result.missionCoins,
+        greaterThanOrEqualTo(kAllMissionsBonus.coins),
+      );
     });
 
     test('2つまでなら上乗せは出ない', () {
@@ -213,8 +222,8 @@ void main() {
       expect(result.clearedMissions.length, lessThan(kMissionSlots));
     });
 
-    test('報酬でコインは増えない', () {
-      // コインの源は歩数だけ、という決まりを崩さない
+    test('目標のコインは、その日の取り分に足される', () {
+      // 見出しの「獲得コイン」に入っていないと、増えた分が合わない
       final state = _fullParty();
       state.today = const DailyInput(
         ateWell: true,
@@ -224,8 +233,23 @@ void main() {
 
       final result = state.endDay();
 
-      expect(result.coinsEarned, 0);
-      expect(state.coins, 0);
+      expect(result.missionCoins, greaterThan(0));
+      expect(result.coinsEarned, result.coins.total + result.missionCoins);
+      expect(state.coins, result.coinsEarned);
+    });
+
+    test('目標は鍵を出さない', () {
+      // 鍵はボスとショップに任せる
+      for (final m in kMissions) {
+        expect(m.reward.keys, 0, reason: m.label);
+      }
+      expect(kAllMissionsBonus.keys, 0);
+    });
+
+    test('どの目標にもコインがつく', () {
+      for (final m in kMissions) {
+        expect(m.reward.coins, greaterThan(0), reason: m.label);
+      }
     });
   });
 
@@ -333,5 +357,6 @@ const Set<String> _everyone = {'heart', 'lung', 'stomach', 'liver', 'brain'};
 
 /// 五人そろった状態。目標は仲間の顔ぶれで変わるので、
 /// 3つ出そろう前提の試験にはこれを使う。
-GameState _fullParty() => GameState.fresh()
-  ..readEpisodes.addAll(const ['main:2', 'main:3', 'main:5', 'main:7']);
+GameState _fullParty() =>
+    GameState.fresh()
+      ..readEpisodes.addAll(const ['main:2', 'main:3', 'main:5', 'main:7']);

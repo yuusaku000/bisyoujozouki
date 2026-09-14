@@ -40,6 +40,11 @@ class _HeartUpOverlayState extends State<HeartUpOverlay>
     _controller.forward();
   }
 
+  /// 演出が終わったか。終わるまでは閉じさせない。
+  ///
+  /// 一度きりの場面なので、触った拍子に飛ばしてしまうと戻せない。
+  bool get _done => _controller.status == AnimationStatus.completed;
+
   @override
   void dispose() {
     _controller.dispose();
@@ -51,7 +56,9 @@ class _HeartUpOverlayState extends State<HeartUpOverlay>
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: GestureDetector(
-        onTap: () => Navigator.pop(context),
+        onTap: () {
+          if (_done) Navigator.pop(context);
+        },
         child: Stack(
           fit: StackFit.expand,
           children: [
@@ -201,11 +208,23 @@ class _HeartUpOverlayState extends State<HeartUpOverlay>
                 style: const TextStyle(fontSize: 15, height: 1.6),
               ),
               const SizedBox(height: 10),
-              const Align(
+              // 閉じられるようになってから出す。先に出ていると、
+              // 押しても閉じないあいだ、壊れているように見える。
+              Align(
                 alignment: Alignment.centerRight,
-                child: Text(
-                  'タップでとじる',
-                  style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+                child: AnimatedBuilder(
+                  animation: _controller,
+                  builder: (context, _) => AnimatedOpacity(
+                    opacity: _done ? 1 : 0,
+                    duration: const Duration(milliseconds: 260),
+                    child: const Text(
+                      'タップでとじる',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -231,8 +250,10 @@ class _HeartRain extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     for (var i = 0; i < seeds.length; i++) {
       final seed = seeds[i];
+      // 残りの時間を全部使って上がる。決め打ちの長さにすると、
+      // 遅く出たものが上がりきる前に演出が終わってしまう。
       final delay = seed * 0.4;
-      final t = ((progress - delay) / 0.7).clamp(0.0, 1.0);
+      final t = ((progress - delay) / (1 - delay)).clamp(0.0, 1.0);
       if (t <= 0) continue;
 
       final x = size.width * (0.08 + seed * 0.84);

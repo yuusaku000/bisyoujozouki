@@ -48,6 +48,11 @@ class _AscendOverlayState extends State<AscendOverlay>
     _controller.forward();
   }
 
+  /// 演出が終わったか。終わるまでは閉じさせない。
+  ///
+  /// 鍵を使い切る一度きりの場面なので、触った拍子に飛ばすと戻せない。
+  bool get _done => _controller.status == AnimationStatus.completed;
+
   @override
   void dispose() {
     _controller.dispose();
@@ -59,7 +64,9 @@ class _AscendOverlayState extends State<AscendOverlay>
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: GestureDetector(
-        onTap: () => Navigator.pop(context),
+        onTap: () {
+          if (_done) Navigator.pop(context);
+        },
         child: Stack(
           fit: StackFit.expand,
           children: [
@@ -233,11 +240,22 @@ class _AscendOverlayState extends State<AscendOverlay>
                 style: const TextStyle(fontSize: 15, height: 1.6),
               ),
               const SizedBox(height: 10),
-              const Align(
+              // 閉じられるようになってから出す。
+              Align(
                 alignment: Alignment.centerRight,
-                child: Text(
-                  'タップでとじる',
-                  style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+                child: AnimatedBuilder(
+                  animation: _controller,
+                  builder: (context, _) => AnimatedOpacity(
+                    opacity: _done ? 1 : 0,
+                    duration: const Duration(milliseconds: 260),
+                    child: const Text(
+                      'タップでとじる',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ],

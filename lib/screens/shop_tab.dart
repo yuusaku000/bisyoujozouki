@@ -1,10 +1,14 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 import '../data/lines.dart';
+import '../data/sounds.dart';
 import '../data/organs.dart';
 import '../data/theme.dart';
 import '../models/game_state.dart';
 import '../models/organ.dart';
+import '../services/audio.dart';
 import '../widgets/coin_text.dart';
 import '../widgets/ornate.dart';
 import '../widgets/scene.dart';
@@ -12,10 +16,18 @@ import '../widgets/top_toast.dart';
 
 /// コインの使い道。歩いた分をここで形にする。
 class ShopTab extends StatelessWidget {
-  const ShopTab({super.key, required this.state, required this.onChanged});
+  const ShopTab({
+    super.key,
+    required this.state,
+    required this.onChanged,
+    this.visit = 0,
+  });
 
   final GameState state;
   final VoidCallback onChanged;
+
+  /// タブを開き直した回数。変わるたびに店番も替わる。
+  final int visit;
 
   static const int keyPrice = 25000;
   static const int ticketPrice = 2500;
@@ -27,6 +39,7 @@ class ShopTab extends StatelessWidget {
   void _buyBundle(BuildContext context) {
     const price = bundlePrice;
     if (state.coins < price) return;
+    Audio.instance.playSfx(Sfx.confirm);
     state.coins -= price;
     state.tickets += bundleSize;
     onChanged();
@@ -40,6 +53,7 @@ class ShopTab extends StatelessWidget {
   void _buy(BuildContext context, {int keys = 0, int tickets = 0}) {
     final price = keys * keyPrice + tickets * ticketPrice;
     if (state.coins < price) return;
+    Audio.instance.playSfx(Sfx.confirm);
     state.coins -= price;
     state.keys += keys;
     state.tickets += tickets;
@@ -51,13 +65,11 @@ class ShopTab extends StatelessWidget {
     );
   }
 
-  /// 店番。帳簿をつけるのは肝臓の仕事なので、いるなら肝臓が立つ。
+  /// 店番。仲間の中から適当にひとり。開き直すたびに替わる。
   Organ _keeper() {
     final party = state.party;
-    for (final organ in party) {
-      if (organ.id == 'liver') return organ;
-    }
-    return party.isEmpty ? organById('heart') : party.first;
+    if (party.isEmpty) return organById('heart');
+    return party[Random(visit).nextInt(party.length)];
   }
 
   @override
@@ -119,9 +131,7 @@ class ShopTab extends StatelessWidget {
                   const Center(child: OrnateLabel('鍵の集めかた')),
                   const SizedBox(height: 12),
                   _hint('ボスを倒す', '10ステージごとのボスが1個落とします'),
-                  _hint('きつい目標を達成する', '8000歩、階段12階、生活を全部整える'),
-                  _hint('3つの目標をそろえる', 'その日の目標を全部達成すると1個'),
-                  _hint('ここで買う', 'コインは歩いた分だけ貯まります'),
+                  _hint('ここで買う', '今日の目標を達成すると、コインが貯まります'),
                 ],
               ),
             ),

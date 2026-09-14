@@ -16,41 +16,45 @@ enum MissionKind {
   final String label;
 }
 
-/// 目標の一覧。きつい条件ほど鍵が出る。
+/// 目標の一覧。
 ///
-/// 種類ごとに、やさしい順に並べてある。
+/// どれも「ふつうに気をつけた一日」で届く重さにしてある。3つそろえるのが
+/// 前提なので、ひとつでも重いと、その日はもう揃わない。
 ///
-/// 階段の段数は、健康度の目安（[DailyInput.stairsGoal] = 5階）を
-/// またぐように置いてある。いちばんやさしいものが目安を超えていると、
-/// ふつうの日に何ひとつ達成できない。
+/// 歩数は目標歩数に対する割合で決める。目標は人によって育つので、
+/// 固定の歩数にすると、目標が低い人には一生届かないものになる。
+/// 階段は健康度の目安（[DailyInput.stairsGoal] = 5階）をまたぐように置く。
+///
+/// 報酬は鍵ではなくコイン。鍵はボスとショップに任せて、目標のほうは
+/// 育成に直に効くものを出す。
 const List<Mission> kMissions = [
   // ── あるく ──
+  Mission(
+    id: 'walk_light',
+    requires: ['heart'],
+    kind: MissionKind.walk,
+    label: '目標の8割あるく',
+    detail: '届かなかった日でも、ここまで来ていれば',
+    reward: MissionReward(coins: 1500, tickets: 1),
+    check: _walkLight,
+  ),
   Mission(
     id: 'goal',
     requires: ['heart'],
     kind: MissionKind.walk,
     label: '目標の歩数を歩く',
     detail: 'その日の目標をきっちり達成する',
-    reward: MissionReward(tickets: 1),
+    reward: MissionReward(coins: 3000, tickets: 2),
     check: _goal,
   ),
   Mission(
-    id: 'goal_half_more',
+    id: 'walk_more',
     requires: ['heart'],
     kind: MissionKind.walk,
-    label: '目標の1.5倍あるく',
+    label: '目標の1.3倍あるく',
     detail: 'いつもより少しだけ遠回りして帰る',
-    reward: MissionReward(tickets: 2),
-    check: _goalAndHalf,
-  ),
-  Mission(
-    id: 'long_walk',
-    requires: ['heart'],
-    kind: MissionKind.walk,
-    label: '8000歩あるく',
-    detail: '本気の日。鍵が手に入る',
-    reward: MissionReward(keys: 1),
-    check: _longWalk,
+    reward: MissionReward(coins: 6000, tickets: 3),
+    check: _walkMore,
   ),
 
   // ── のぼる ──
@@ -58,27 +62,27 @@ const List<Mission> kMissions = [
     id: 'stairs_light',
     requires: ['lung'],
     kind: MissionKind.climb,
-    label: '階段を3階のぼる',
-    detail: '駅の階段ひとつぶん',
-    reward: MissionReward(tickets: 1),
+    label: '階段を2階のぼる',
+    detail: '一度でも、のぼろうと思えたなら',
+    reward: MissionReward(coins: 1500, tickets: 1),
     check: _stairsLight,
   ),
   Mission(
     id: 'stairs',
     requires: ['lung'],
     kind: MissionKind.climb,
-    label: '階段を6階のぼる',
+    label: '階段を4階のぼる',
     detail: 'エレベーターを使わない',
-    reward: MissionReward(tickets: 2),
+    reward: MissionReward(coins: 3000, tickets: 2),
     check: _stairs,
   ),
   Mission(
     id: 'stairs_hard',
     requires: ['lung'],
     kind: MissionKind.climb,
-    label: '階段を12階のぼる',
-    detail: '脚が笑う。鍵が手に入る',
-    reward: MissionReward(keys: 1),
+    label: '階段を8階のぼる',
+    detail: 'すこし脚にくる',
+    reward: MissionReward(coins: 6000, tickets: 3),
     check: _stairsHard,
   ),
 
@@ -89,7 +93,7 @@ const List<Mission> kMissions = [
     kind: MissionKind.care,
     label: 'ちゃんと食べる',
     detail: '腹八分目で、食事を抜かない',
-    reward: MissionReward(tickets: 1),
+    reward: MissionReward(coins: 1500, tickets: 1),
     check: _eat,
   ),
   Mission(
@@ -98,7 +102,7 @@ const List<Mission> kMissions = [
     kind: MissionKind.care,
     label: '体を休める',
     detail: '飲みすぎず、無理をしない',
-    reward: MissionReward(tickets: 1),
+    reward: MissionReward(coins: 1500, tickets: 1),
     check: _rest,
   ),
   Mission(
@@ -107,7 +111,7 @@ const List<Mission> kMissions = [
     kind: MissionKind.care,
     label: 'よく眠る',
     detail: '7時間以上、夜更かしをしない',
-    reward: MissionReward(tickets: 1),
+    reward: MissionReward(coins: 1500, tickets: 1),
     check: _sleep,
   ),
   Mission(
@@ -115,8 +119,8 @@ const List<Mission> kMissions = [
     requires: ['stomach', 'liver', 'brain'],
     kind: MissionKind.care,
     label: '食事・休息・睡眠すべて',
-    detail: '生活を全部整える。鍵が手に入る',
-    reward: MissionReward(keys: 1),
+    detail: '生活を全部整える',
+    reward: MissionReward(coins: 6000, tickets: 3),
     check: _allCare,
   ),
 ];
@@ -127,8 +131,8 @@ const int kMissionSlots = 3;
 /// 3つとも達成した日だけの上乗せ。
 ///
 /// ひとつずつの報酬を足すだけだと、できそうな目標だけ拾って終わりになる。
-/// 揃えたときにだけ鍵が出るようにして、「今日は3つとも」を狙わせる。
-const MissionReward kAllMissionsBonus = MissionReward(keys: 1, tickets: 2);
+/// 揃えた日だけ大きく出して、「今日は3つとも」を狙わせる。
+const MissionReward kAllMissionsBonus = MissionReward(coins: 10000, tickets: 5);
 
 /// その日の3つ。
 ///
@@ -161,13 +165,12 @@ Mission? missionById(String id) {
   return null;
 }
 
+bool _walkLight(DailyInput input, int goal) => input.steps >= goal * 0.8;
 bool _goal(DailyInput input, int goal) => input.steps >= goal;
-bool _goalAndHalf(DailyInput input, int goal) =>
-    input.steps >= (goal * 1.5).round();
-bool _longWalk(DailyInput input, int goal) => input.steps >= 8000;
-bool _stairsLight(DailyInput input, int goal) => input.stairs >= 3;
-bool _stairs(DailyInput input, int goal) => input.stairs >= 6;
-bool _stairsHard(DailyInput input, int goal) => input.stairs >= 12;
+bool _walkMore(DailyInput input, int goal) => input.steps >= goal * 1.3;
+bool _stairsLight(DailyInput input, int goal) => input.stairs >= 2;
+bool _stairs(DailyInput input, int goal) => input.stairs >= 4;
+bool _stairsHard(DailyInput input, int goal) => input.stairs >= 8;
 bool _eat(DailyInput input, int goal) => input.ateWell;
 bool _rest(DailyInput input, int goal) => input.rested;
 bool _sleep(DailyInput input, int goal) => input.sleptWell;

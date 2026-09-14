@@ -21,6 +21,7 @@ class DayResult {
     required this.newStepGoal,
     required this.clearedMissions,
     this.missionBonus = const MissionReward(),
+    this.missionCoins = 0,
   });
 
   /// もらったコインの内訳。何が効いたのかを結果画面で見せる。
@@ -28,7 +29,8 @@ class DayResult {
 
   final Map<String, int> healthDeltas;
 
-  int get coinsEarned => coins.total;
+  /// 目標のぶんも足した、その日にもらったコイン。
+  int get coinsEarned => coins.total + missionCoins;
   bool get goalAchieved => coins.goalAchieved;
 
   /// 目標が変わった場合のみ値が入る。
@@ -38,6 +40,9 @@ class DayResult {
 
   /// 3つとも達成した日だけ入る上乗せ。空のこともある。
   final MissionReward missionBonus;
+
+  /// 目標の達成でもらったコイン。上乗せのぶんも含む。
+  final int missionCoins;
 
   bool get allMissionsCleared => !missionBonus.isEmpty;
 }
@@ -242,6 +247,7 @@ class GameState {
   ///
   /// 報酬でコインを配ると「バトル→コイン→レベル→強くなる」の輪が閉じ、
   /// 歩かなくても強くなれてしまう。強さの源は運動だけに保つ。
+  /// 目標の達成でコインが出るのは、達成すること自体が運動だから。
   ///
   /// チケットは配る。引いた先で手に入るのはプレゼントで、プレゼントが
   /// 上げるのは親密度だけなので、強さの輪には入らない。
@@ -322,7 +328,10 @@ class GameState {
 
     final todays = missions;
     final cleared = todays.where((m) => m.isDone(today, stepGoal)).toList();
+    var missionCoins = 0;
     for (final m in cleared) {
+      coins += m.reward.coins;
+      missionCoins += m.reward.coins;
       keys += m.reward.keys;
       tickets += m.reward.tickets;
     }
@@ -335,6 +344,8 @@ class GameState {
         todays.length == kMissionSlots && cleared.length == todays.length
         ? kAllMissionsBonus
         : const MissionReward();
+    coins += bonus.coins;
+    missionCoins += bonus.coins;
     keys += bonus.keys;
     tickets += bonus.tickets;
 
@@ -355,6 +366,7 @@ class GameState {
       newStepGoal: newGoal,
       clearedMissions: cleared,
       missionBonus: bonus,
+      missionCoins: missionCoins,
     );
   }
 

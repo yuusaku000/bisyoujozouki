@@ -27,19 +27,12 @@ class GrowTab extends StatefulWidget {
 }
 
 class _GrowTabState extends State<GrowTab> {
-  final _pages = PageController();
   int _index = 0;
 
   /// 直近の反応。しばらくすると消える。
   String? _reaction;
 
   GameState get state => widget.state;
-
-  @override
-  void dispose() {
-    _pages.dispose();
-    super.dispose();
-  }
 
   int _sayId = 0;
 
@@ -133,59 +126,97 @@ class _GrowTabState extends State<GrowTab> {
     final organ = party[_index.clamp(0, party.length - 1)];
     final status = state.statusOf(organ.id);
 
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        const ColoredBox(color: AppColors.background),
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 420),
-          decoration: BoxDecoration(
-            gradient: RadialGradient(
-              radius: 1.1,
-              center: const Alignment(0, -0.35),
-              colors: [
-                organ.accent.withValues(alpha: 0.36),
-                organ.accent.withValues(alpha: 0.08),
-                Colors.transparent,
+    // 受け口は画面の全体。立ち絵のところだけにすると、上に重なっている
+    // 幕や余白に阻まれて、どこを掴めるのか分からなくなる。
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onHorizontalDragStart: (_) => _dragged = 0,
+      onHorizontalDragUpdate: (d) => _dragged += d.delta.dx,
+      onHorizontalDragEnd: (d) => _endDrag(party.length, d),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          const ColoredBox(color: AppColors.background),
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 420),
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                radius: 1.1,
+                center: const Alignment(0, -0.35),
+                colors: [
+                  organ.accent.withValues(alpha: 0.36),
+                  organ.accent.withValues(alpha: 0.08),
+                  Colors.transparent,
+                ],
+                stops: const [0.0, 0.5, 1.0],
+              ),
+            ),
+          ),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 220),
+            child: KeyedSubtree(key: ValueKey(organ.id), child: _figure(organ)),
+          ),
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xCC170E1A),
+                  Color(0x00170E1A),
+                  Color(0xF5120A16),
+                ],
+                stops: [0.0, 0.28, 0.62],
+              ),
+            ),
+          ),
+          SafeArea(
+            bottom: false,
+            child: Column(
+              children: [
+                _header(),
+                const Spacer(),
+                if (_reaction != null) _reactionBubble(organ),
+                _faceStrip(party),
+                const SizedBox(height: 8),
+                _panel(organ, status),
               ],
-              stops: const [0.0, 0.5, 1.0],
             ),
           ),
-        ),
-        PageView.builder(
-          controller: _pages,
-          itemCount: party.length,
-          onPageChanged: (i) => setState(() {
-            _index = i;
-            _reaction = null;
-          }),
-          itemBuilder: (context, i) => _figure(party[i]),
-        ),
-        const DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xCC170E1A), Color(0x00170E1A), Color(0xF5120A16)],
-              stops: [0.0, 0.28, 0.62],
-            ),
-          ),
-        ),
-        SafeArea(
-          bottom: false,
-          child: Column(
-            children: [
-              _header(),
-              const Spacer(),
-              if (_reaction != null) _reactionBubble(organ),
-              _faceStrip(party),
-              const SizedBox(height: 8),
-              _panel(organ, status),
-            ],
-          ),
-        ),
-      ],
+        ],
+      ),
     );
+  }
+
+  /// 振っているあいだに動いた横の距離。
+  double _dragged = 0;
+
+  /// 勢いと距離のどちらかが足りていれば替える。
+  ///
+  /// 勢いだけで見ると、ゆっくり引いたときに0になって向きが決まらない。
+  /// 距離だけで見ると、軽く弾いただけでは動かない。
+  void _endDrag(int count, DragEndDetails details) {
+    const flick = 240.0;
+    const reach = 60.0;
+    final speed = details.primaryVelocity ?? 0;
+
+    if (speed < -flick || _dragged < -reach) {
+      _slide(count, 1);
+    } else if (speed > flick || _dragged > reach) {
+      _slide(count, -1);
+    }
+  }
+
+  /// 横に振ったぶんだけ隣の子へ。端では止まる。
+  void _slide(int count, int step) {
+    final next = (_index + step).clamp(0, count - 1);
+    if (next == _index) return;
+
+    Audio.instance.playSfx(Sfx.tap);
+    setState(() {
+      _index = next;
+      _reaction = null;
+    });
   }
 
   Widget _figure(Organ organ) {
@@ -310,11 +341,8 @@ class _GrowTabState extends State<GrowTab> {
           final status = state.statusOf(organ.id);
           return GestureDetector(
             onTap: () {
-              _pages.animateToPage(
-                i,
-                duration: const Duration(milliseconds: 280),
-                curve: Curves.easeOutCubic,
-              );
+              if (i == _index) return;
+              Audio.instance.playSfx(Sfx.tap);
               setState(() {
                 _index = i;
                 _reaction = null;

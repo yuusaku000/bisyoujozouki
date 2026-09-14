@@ -1,22 +1,35 @@
 import '../data/missions.dart';
 import 'daily_input.dart';
 
-/// ミッションの報酬。コインは出さない。
+/// 目標を達成したときの取り分。
 ///
-/// コインの源は歩数だけ、という決まりを崩さないため。鍵とチケットは
-/// それ自体では強さにならず、運動で得たコインと合わせてはじめて意味を持つ。
+/// コインを出しても、強さの源が運動だけ、という決まりは崩れない。
+/// 目標の中身が歩数・階段・生活の3つしかないので、達成すること自体が
+/// 体を動かした証明になっている。
 class MissionReward {
-  const MissionReward({this.keys = 0, this.tickets = 0});
+  const MissionReward({this.coins = 0, this.keys = 0, this.tickets = 0});
 
+  final int coins;
   final int keys;
   final int tickets;
 
   String get label => [
+    if (coins > 0) 'コイン ${_comma(coins)}',
     if (keys > 0) '解放の鍵 ×$keys',
     if (tickets > 0) 'ガチャチケット ×$tickets',
   ].join('　');
 
-  bool get isEmpty => keys == 0 && tickets == 0;
+  bool get isEmpty => coins == 0 && keys == 0 && tickets == 0;
+
+  static String _comma(int value) {
+    final digits = value.toString();
+    final buffer = StringBuffer();
+    for (var i = 0; i < digits.length; i++) {
+      if (i > 0 && (digits.length - i) % 3 == 0) buffer.write(',');
+      buffer.write(digits[i]);
+    }
+    return buffer.toString();
+  }
 }
 
 /// その日の目標。中身はすべて運動か生活習慣にしてある。

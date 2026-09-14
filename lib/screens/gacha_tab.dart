@@ -15,10 +15,18 @@ import 'gacha_reveal.dart';
 
 /// チケットを使ってプレゼントを引く。出たものは臓器に渡して親密度になる。
 class GachaTab extends StatefulWidget {
-  const GachaTab({super.key, required this.state, required this.onChanged});
+  const GachaTab({
+    super.key,
+    required this.state,
+    required this.onChanged,
+    this.visit = 0,
+  });
 
   final GameState state;
   final VoidCallback onChanged;
+
+  /// タブを開き直した回数。変わるたびに立つ子を引き直す。
+  final int visit;
 
   @override
   State<GachaTab> createState() => _GachaTabState();
@@ -27,11 +35,17 @@ class GachaTab extends StatefulWidget {
 class _GachaTabState extends State<GachaTab> {
   GameState get state => widget.state;
 
-  /// 立つ子。画面を開くたびに引き直す。
+  /// 立つ子を決める数。開き直すたびに引き直す。
   ///
   /// 毎フレーム引き直すと、触るたびに入れ替わって落ち着かない。
   /// 開いているあいだは同じ子のままにする。
-  late final int _seed = Random().nextInt(1 << 30);
+  int _seed = Random().nextInt(1 << 30);
+
+  @override
+  void didUpdateWidget(GachaTab old) {
+    super.didUpdateWidget(old);
+    if (old.visit != widget.visit) _seed = Random().nextInt(1 << 30);
+  }
 
   Future<void> _pull({required bool ten}) async {
     final results = state.pull(ten: ten);

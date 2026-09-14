@@ -35,6 +35,12 @@ class _MainShellState extends State<MainShell> {
   GameState? _state;
   int _tab = 0;
 
+  /// タブを選び直した回数。
+  ///
+  /// IndexedStack は中身を作り直さないので、画面の State だけでは
+  /// 「開き直した」ことが分からない。開くたびに変わる数をここから配る。
+  int _visit = 0;
+
   @override
   void initState() {
     super.initState();
@@ -162,8 +168,8 @@ class _MainShellState extends State<MainShell> {
                 anchors: _anchors,
               ),
               GrowTab(state: state, onChanged: _changed),
-              GachaTab(state: state, onChanged: _changed),
-              ShopTab(state: state, onChanged: _changed),
+              GachaTab(state: state, onChanged: _changed, visit: _visit),
+              ShopTab(state: state, onChanged: _changed, visit: _visit),
             ],
           ),
           bottomNavigationBar: KeyedSubtree(
@@ -219,7 +225,11 @@ class _MainShellState extends State<MainShell> {
     final selected = _tab == index;
     return Expanded(
       child: InkWell(
-        onTap: () => setState(() => _tab = index),
+        onTap: () => setState(() {
+          // 同じタブを押し直したときも数える。立っている子が変わる。
+          _tab = index;
+          _visit++;
+        }),
         child: Stack(
           clipBehavior: Clip.none,
           alignment: Alignment.center,
