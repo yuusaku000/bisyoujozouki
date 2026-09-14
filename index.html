@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <base href="/bisyoujozouki/">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="歩いた分だけ、あの子たちが元気になる。">
+
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="臓器っち">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>臓器っち</title>
+  <link rel="manifest" href="manifest.json">
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #170E1A;
+      overflow: hidden;
+    }
+
+    /*
+      読み込みのあいだ出す幕。
+      canvaskit と画像で数十MBあるので、何も出さないと
+      「壊れている」と思われて閉じられてしまう。
+    */
+    #boot {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at 50% 42%, #2E1D38 0%, #170E1A 62%, #0E0710 100%);
+      color: #F8EEF4;
+      /*
+        文字は置かない。幕はFlutterのフォントを使えず、OSに日本語書体が
+        無い環境では豆腐（□）になる。題名はFlutter側の画面で出す。
+      */
+      transition: opacity .45s ease;
+      z-index: 9999;
+    }
+
+    #boot.done {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* 鼓動。ゲームの中でも同じ合図を使っている */
+    .beat {
+      width: 84px;
+      height: 84px;
+      position: relative;
+      animation: beat 1.15s ease-in-out infinite;
+    }
+
+    .beat svg {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 0 18px rgba(255, 136, 172, .55));
+    }
+
+    @keyframes beat {
+      0%, 100% { transform: scale(1); }
+      14%      { transform: scale(1.16); }
+      28%      { transform: scale(1); }
+      42%      { transform: scale(1.09); }
+      56%      { transform: scale(1); }
+    }
+
+    /* 進み具合は本当には分からないので、動いていることだけ見せる */
+    .bar {
+      margin-top: 30px;
+      width: 168px;
+      height: 3px;
+      border-radius: 2px;
+      background: rgba(179, 158, 188, .18);
+      overflow: hidden;
+    }
+
+    .bar span {
+      display: block;
+      width: 38%;
+      height: 100%;
+      border-radius: 2px;
+      background: linear-gradient(90deg, rgba(255,136,172,0), #FF88AC, rgba(255,136,172,0));
+      animation: slide 1.35s ease-in-out infinite;
+    }
+
+    @keyframes slide {
+      0%   { transform: translateX(-110%); }
+      100% { transform: translateX(380%); }
+    }
+  </style>
+</head>
+<body>
+  <div id="boot">
+    <div class="beat">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path fill="#FF88AC" d="M12 21s-7.5-4.7-9.5-9A5.3 5.3 0 0 1 12 6.2 5.3 5.3 0 0 1 21.5 12c-2 4.3-9.5 9-9.5 9z"/>
+      </svg>
+    </div>
+    <div class="bar"><span></span></div>
+  </div>
+
+  <script>
+    // 最初の絵が出てから幕を上げる。
+    // 途中で外すと、真っ暗な画面がいったん見えてしまう。
+    window.addEventListener('flutter-first-frame', function () {
+      var boot = document.getElementById('boot');
+      if (!boot) return;
+      boot.classList.add('done');
+      setTimeout(function () { boot.remove(); }, 500);
+    });
+  </script>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>
