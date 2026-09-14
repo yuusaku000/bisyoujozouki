@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../data/lines.dart';
+import '../data/organs.dart';
 import '../data/theme.dart';
 import '../models/game_state.dart';
+import '../models/organ.dart';
 import '../widgets/coin_text.dart';
 import '../widgets/ornate.dart';
+import '../widgets/scene.dart';
 import '../widgets/top_toast.dart';
 
 /// コインの使い道。歩いた分をここで形にする。
@@ -16,13 +20,24 @@ class ShopTab extends StatelessWidget {
   static const int keyPrice = 25000;
   static const int ticketPrice = 2500;
 
+  /// まとめ買いは1割引き。
+  ///
+  /// 前は単品10枚ぶんと同じ値段で、押す回数が減るだけだった。
+  /// それでは「まとめて買う」を選ぶ理由がない。
+  static const int bundlePrice = 22500;
+  static const int bundleSize = 10;
+
   void _buyBundle(BuildContext context) {
-    final price = ticketPrice * 10;
+    const price = bundlePrice;
     if (state.coins < price) return;
     state.coins -= price;
-    state.tickets += 10;
+    state.tickets += bundleSize;
     onChanged();
-    showTopToast(context, 'ガチャチケット ×10 を買いました', icon: Icons.shopping_bag);
+    showTopToast(
+      context,
+      'ガチャチケット ×$bundleSize を買いました',
+      icon: Icons.shopping_bag,
+    );
   }
 
   void _buy(BuildContext context, {int keys = 0, int tickets = 0}) {
@@ -39,39 +54,37 @@ class ShopTab extends StatelessWidget {
     );
   }
 
+  /// 店番。帳簿をつけるのは肝臓の仕事なので、いるなら肝臓が立つ。
+  Organ _keeper() {
+    final party = state.party;
+    for (final organ in party) {
+      if (organ.id == 'liver') return organ;
+    }
+    return party.isEmpty ? organById('heart') : party.first;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: AppColors.background,
+    return SceneBackdrop(
+      tint: AppColors.gold,
       child: SafeArea(
         bottom: false,
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 12, 18, 10),
-              child: Row(
-                children: [
-                  const Text(
-                    'ショップ',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 2,
-                    ),
-                  ),
-                  const Spacer(),
-                  _counter(
-                    Icons.circle,
-                    formatCoins(state.coins),
-                    AppColors.gold,
-                  ),
-                ],
+            SceneHeader(
+              title: 'ショップ',
+              trailing: CountPill(
+                icon: Icons.circle,
+                value: formatCoins(state.coins),
+                color: AppColors.gold,
               ),
             ),
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(14, 0, 14, 20),
                 children: [
+                  _keeperPanel(),
+                  const SizedBox(height: 14),
                   _item(
                     context,
                     icon: Icons.vpn_key,
@@ -80,6 +93,7 @@ class ShopTab extends StatelessWidget {
                     detail: 'レベルの上限を1段ぶん引き上げる',
                     price: keyPrice,
                     owned: state.keys,
+                    premium: true,
                     onBuy: () => _buy(context, keys: 1),
                   ),
                   const SizedBox(height: 12),
@@ -98,9 +112,10 @@ class ShopTab extends StatelessWidget {
                     context,
                     icon: Icons.confirmation_number,
                     color: AppColors.gold,
-                    name: 'ガチャチケット ×10',
-                    detail: '10連ぶんをまとめて',
-                    price: ticketPrice * 10,
+                    name: 'ガチャチケット ×$bundleSize',
+                    detail: 'まとめて買うと1割引き',
+                    price: bundlePrice,
+                    was: ticketPrice * bundleSize,
                     owned: state.tickets,
                     onBuy: () => _buyBundle(context),
                   ),
@@ -109,6 +124,7 @@ class ShopTab extends StatelessWidget {
                   const SizedBox(height: 12),
                   _hint('ボスを倒す', '10ステージごとのボスが1個落とします'),
                   _hint('きつい目標を達成する', '8000歩、階段25階、生活を全部整える'),
+                  _hint('3つの目標をそろえる', 'その日の目標を全部達成すると1個'),
                   _hint('ここで買う', 'コインは歩いた分だけ貯まります'),
                 ],
               ),
@@ -119,29 +135,36 @@ class ShopTab extends StatelessWidget {
     );
   }
 
-  Widget _counter(IconData icon, String value, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.hollow,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.goldDim.withValues(alpha: 0.6)),
-      ),
+  /// 店番の立ち絵とひとこと。ここだけ人がいないと、倉庫の画面に見える。
+  Widget _keeperPanel() {
+    final organ = _keeper();
+
+    return OrnatePanel(
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+      borderColor: AppColors.goldDim,
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 6),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 120),
-            child: Text(
-              value,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w900,
-                color: color,
-              ),
+          CharacterBust(organ: organ, width: 78, height: 94),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  organ.name,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    color: organ.accent,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  kShopLines[organ.id] ?? 'いらっしゃいませ。',
+                  style: const TextStyle(fontSize: 12.5, height: 1.5),
+                ),
+              ],
             ),
           ),
         ],
@@ -158,6 +181,8 @@ class ShopTab extends StatelessWidget {
     required int price,
     required int owned,
     required VoidCallback onBuy,
+    int? was,
+    bool premium = false,
   }) {
     final affordable = state.coins >= price;
     return OrnatePanel(
@@ -200,12 +225,29 @@ class ShopTab extends StatelessWidget {
                   ],
                 ),
               ),
-              Text(
-                '所持 $owned',
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: AppColors.textMuted,
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  if (was != null && was > price) ...[
+                    // 元の値段に線を引いておかないと、安いことが伝わらない。
+                    Text(
+                      formatCoins(was),
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: AppColors.textMuted,
+                        decoration: TextDecoration.lineThrough,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                  ],
+                  Text(
+                    '所持 $owned',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -213,11 +255,14 @@ class ShopTab extends StatelessWidget {
           JewelButton(
             label: '${formatCoins(price)} で買う',
             height: 46,
-            gradient: affordable
-                ? AppColors.roseGradient
-                : const LinearGradient(
+            gradient: !affordable
+                ? const LinearGradient(
                     colors: [Color(0xFF4A3556), Color(0xFF2E2038)],
-                  ),
+                  )
+                // 鍵だけ色を変える。同じボタンが縦に並ぶと、どれも同じに見える。
+                : premium
+                ? AppColors.goldGradient
+                : AppColors.roseGradient,
             onPressed: affordable ? onBuy : null,
           ),
         ],

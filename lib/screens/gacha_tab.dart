@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../data/lines.dart';
+import '../data/organs.dart';
 import '../data/presents.dart';
 import '../data/theme.dart';
 import '../models/game_state.dart';
+import '../models/organ.dart';
 import '../models/present.dart';
 import '../widgets/ornate.dart';
+import '../widgets/scene.dart';
 import 'gacha_reveal.dart';
 
 /// チケットを使ってプレゼントを引く。出たものは臓器に渡して親密度になる。
@@ -134,124 +138,49 @@ class _GachaTabState extends State<GachaTab> {
     );
   }
 
+  /// いちばん親密度の低い子。渡す相手が見えると、引く理由になる。
+  ///
+  /// まだ誰とも会っていないうちは心臓が立つ。
+  Organ get _waiting {
+    final party = state.party;
+    if (party.isEmpty) return organById('heart');
+    return party.reduce(
+      (a, b) => state.heartsOf(b.id) < state.heartsOf(a.id) ? b : a,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: AppColors.background,
+    return SceneBackdrop(
       child: SafeArea(
         bottom: false,
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 12, 18, 10),
-              child: Row(
-                children: [
-                  const Text(
-                    'ガチャ',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 2,
-                    ),
-                  ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.hollow,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: AppColors.goldDim.withValues(alpha: 0.6),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.confirmation_number,
-                          size: 13,
-                          color: AppColors.rose,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          '${state.tickets}',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w900,
-                            color: AppColors.rose,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+            SceneHeader(
+              title: 'ガチャ',
+              trailing: CountPill(
+                icon: Icons.confirmation_number,
+                value: '${state.tickets}',
+                color: AppColors.rose,
               ),
             ),
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(14, 0, 14, 20),
                 children: [
-                  OrnatePanel(
-                    padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
-                    borderColor: AppColors.rose,
-                    glow: true,
-                    child: Column(
-                      children: [
-                        const Icon(
-                          Icons.card_giftcard,
-                          size: 46,
-                          color: AppColors.rose,
-                        ),
-                        const SizedBox(height: 10),
-                        const Text(
-                          'おくりものガチャ',
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 1.2,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          '出たものは、あの子たちに渡せます',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: AppColors.textMuted,
-                          ),
-                        ),
-                        const SizedBox(height: 18),
-                        JewelButton(
-                          label: '1回ひく　チケット ×$kGachaCost',
-                          height: 50,
-                          onPressed: state.canPull
-                              ? () => _pull(ten: false)
-                              : null,
-                        ),
-                        const SizedBox(height: 10),
-                        JewelButton(
-                          label: '10回ひく　チケット ×$kGachaTenCost',
-                          height: 50,
-                          gradient: AppColors.goldGradient,
-                          onPressed: state.canPullTen
-                              ? () => _pull(ten: true)
-                              : null,
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          '10回ひくと、SR以上が必ず1つ出ます',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: AppColors.textMuted,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  _drawPanel(),
                   const SizedBox(height: 22),
                   const Center(child: OrnateLabel('でるもの')),
+                  const SizedBox(height: 6),
+                  const Center(
+                    child: Text(
+                      'ハートのついたものは、その子の好物。渡すと倍になります',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   for (final rarity in Rarity.values.reversed) ...[
                     _rarityBlock(rarity),
@@ -261,6 +190,149 @@ class _GachaTabState extends State<GachaTab> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _drawPanel() {
+    final organ = _waiting;
+
+    return OrnatePanel(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+      borderColor: AppColors.rose,
+      glow: true,
+      child: Column(
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CharacterBust(organ: organ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'おくりものガチャ',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    _bubble(organ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          _pity(),
+          const SizedBox(height: 14),
+          JewelButton(
+            label: '1回ひく　チケット ×$kGachaCost',
+            height: 50,
+            onPressed: state.canPull ? () => _pull(ten: false) : null,
+          ),
+          const SizedBox(height: 10),
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              JewelButton(
+                label: '10回ひく　チケット ×$kGachaTenCost',
+                height: 50,
+                gradient: AppColors.goldGradient,
+                onPressed: state.canPullTen ? () => _pull(ten: true) : null,
+              ),
+              // 得なほうが分かるように、札を貼っておく。
+              Positioned(top: -7, right: 10, child: _tag('SR以上 確定')),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// その子の待っている一言。吹き出しの形にして、画面の中の声だと分かるように。
+  Widget _bubble(Organ organ) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      decoration: BoxDecoration(
+        color: AppColors.hollow.withValues(alpha: 0.85),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: organ.accent.withValues(alpha: 0.6)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            organ.name,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w900,
+              color: organ.accent,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            kGachaWaitLines[organ.id] ?? '……なにか、くれるんですか。',
+            style: const TextStyle(fontSize: 12, height: 1.5),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 天井。実装はあったのに、画面に出ていなかった。
+  /// あと何回で確定するのかが見えないと、外れが続いたときに理由がなくなる。
+  Widget _pity() {
+    final left = state.pullsToPity;
+    final done = kPityPulls - left;
+
+    return Column(
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.auto_awesome, size: 13, color: AppColors.gold),
+            const SizedBox(width: 6),
+            Text(
+              left == 0 ? '次はSSR確定' : 'あと $left 回でSSR確定',
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: AppColors.gold,
+              ),
+            ),
+            const Spacer(),
+            Text(
+              '$done / $kPityPulls',
+              style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        JewelBar(value: done / kPityPulls, gradient: AppColors.goldGradient),
+      ],
+    );
+  }
+
+  Widget _tag(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppColors.roseDeep,
+        borderRadius: BorderRadius.circular(9),
+        border: Border.all(color: AppColors.rose),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 9,
+          fontWeight: FontWeight.w900,
+          color: Colors.white,
         ),
       ),
     );
@@ -304,27 +376,52 @@ class _GachaTabState extends State<GachaTab> {
             spacing: 8,
             runSpacing: 8,
             children: [
-              for (final present in items)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.hollow,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(present.icon, size: 12, color: rarity.color),
-                      const SizedBox(width: 6),
-                      Text(present.name, style: const TextStyle(fontSize: 11)),
-                    ],
-                  ),
-                ),
+              for (final present in items) _presentChip(present, rarity),
             ],
           ),
+        ],
+      ),
+    );
+  }
+
+  /// でるもの1つ。好物なら、その子の顔をつける。
+  ///
+  /// 誰の好物かが分かると、引く前から渡す相手が決まる。
+  /// データには前から入っていたのに、どこにも出していなかった。
+  Widget _presentChip(Present present, Rarity rarity) {
+    final owner = present.favoriteOf;
+    final organ = owner == null ? null : organById(owner);
+
+    return Container(
+      padding: EdgeInsets.fromLTRB(10, 5, organ == null ? 10 : 5, 5),
+      decoration: BoxDecoration(
+        color: AppColors.hollow,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: (organ?.accent ?? rarity.color).withValues(
+            alpha: organ == null ? 0.25 : 0.75,
+          ),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(present.icon, size: 12, color: rarity.color),
+          const SizedBox(width: 6),
+          Text(present.name, style: const TextStyle(fontSize: 11)),
+          if (organ != null) ...[
+            const SizedBox(width: 7),
+            Icon(Icons.favorite, size: 9, color: organ.accent),
+            const SizedBox(width: 3),
+            ClipOval(
+              child: Image.asset(
+                organ.facePath(Condition.genki),
+                width: 18,
+                height: 18,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ],
         ],
       ),
     );
