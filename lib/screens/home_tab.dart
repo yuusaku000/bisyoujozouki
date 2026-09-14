@@ -19,7 +19,6 @@ import '../data/avatars.dart';
 import '../models/vitals.dart';
 import 'achievements_screen.dart';
 import 'profile_screen.dart';
-import '../widgets/progress_ring.dart';
 import '../widgets/today_clock.dart';
 import 'vitals_screen.dart';
 import 'tutorial.dart';
@@ -216,15 +215,19 @@ class _HomeTabState extends State<HomeTab> with WidgetsBindingObserver {
           children: [
             AvatarCircle(avatar: avatar, size: 26, border: 1.2),
             const SizedBox(width: 7),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 74),
-              child: Text(
-                state.userName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
+            // 上限は決めつつ、狭いときはそこからさらに縮む。
+            // 決め打ちの幅だけだと、入りきらないぶんが隣に重なる。
+            Flexible(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 68),
+                child: Text(
+                  state.userName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
             ),
@@ -243,37 +246,6 @@ class _HomeTabState extends State<HomeTab> with WidgetsBindingObserver {
       ),
     );
     if (mounted) setState(() {});
-  }
-
-  Widget _trophyButton() {
-    final done = kAchievements.where((a) => a.isDone(state)).length;
-    final ready = claimable(state).isNotEmpty;
-
-    return GestureDetector(
-      onTap: _openAchievements,
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-        child: Stack(
-          clipBehavior: Clip.none,
-          alignment: Alignment.center,
-          children: [
-            ProgressRing(
-              ratio: done / kAchievements.length,
-              size: 34,
-              thickness: 2.6,
-              child: const Icon(
-                Icons.emoji_events,
-                size: 17,
-                color: AppColors.gold,
-              ),
-            ),
-            if (ready)
-              const Positioned(top: -2, right: -2, child: UnreadDot(size: 10)),
-          ],
-        ),
-      ),
-    );
   }
 
   Future<void> _openAchievements() async {
@@ -626,25 +598,30 @@ class _HomeTabState extends State<HomeTab> with WidgetsBindingObserver {
   Widget _topBar() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 8, 8, 4),
+      // 名前が長いと横に入りきらず、右端のものから画面の外へ出ていた。
+      // 縮む側（名前）と、まとめる側（三本線）の両方で受ける。
       child: Row(
         children: [
-          _profileButton(),
-          const SizedBox(width: 8),
-          _mark(
-            widget.anchors?.coin,
-            _pill(
-              formatCoins(state.coins),
-              icon: Icons.circle,
-              color: AppColors.gold,
+          // 左の2つでまとめて余りを受ける。Spacer と分け合う形にすると、
+          // 余白が半分持っていって、名前が1文字も出せなくなる。
+          Expanded(
+            child: Row(
+              children: [
+                Flexible(child: _profileButton()),
+                const SizedBox(width: 8),
+                _mark(
+                  widget.anchors?.coin,
+                  _pill(
+                    formatCoins(state.coins),
+                    icon: Icons.circle,
+                    color: AppColors.gold,
+                  ),
+                ),
+              ],
             ),
           ),
-          const Spacer(),
           _mark(widget.anchors?.story, _storyButton()),
-          _trophyButton(),
-          IconButton(
-            onPressed: _openSettings,
-            icon: const Icon(Icons.settings, color: AppColors.textMuted),
-          ),
+          _menuButton(),
         ],
       ),
     );
@@ -694,6 +671,50 @@ class _HomeTabState extends State<HomeTab> with WidgetsBindingObserver {
         ],
       ),
     );
+  }
+
+  /// 三本線。あしあとと設定をここにしまう。
+  ///
+  /// 横に並べていたら、名前が長い人の画面で右端が切れて押せなくなった。
+  Widget _menuButton() {
+    final ready = claimable(state).isNotEmpty;
+
+    return GestureDetector(
+      onTap: _openMenu,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(10, 8, 6, 8),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            const Icon(Icons.menu, size: 24, color: AppColors.textPrimary),
+            if (ready) const Positioned(top: -3, right: -3, child: UnreadDot()),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openMenu() async {
+    Audio.instance.playSfx(Sfx.tap);
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheet) => _MenuSheet(
+        claimable: claimable(state).isNotEmpty,
+        done: kAchievements.where((a) => a.isDone(state)).length,
+        total: kAchievements.length,
+        onAchievements: () {
+          Navigator.pop(sheet);
+          _openAchievements();
+        },
+        onSettings: () {
+          Navigator.pop(sheet);
+          _openSettings();
+        },
+      ),
+    );
+    if (mounted) setState(() {});
   }
 
   Widget _pill(String text, {IconData? icon, Color? color}) {
@@ -1023,6 +1044,122 @@ class _HomeTabState extends State<HomeTab> with WidgetsBindingObserver {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// 三本線から出す紙。あしあとと設定だけ。
+///
+/// 増やしすぎると、ここに何があるのか覚えられなくなる。
+class _MenuSheet extends StatelessWidget {
+  const _MenuSheet({
+    required this.claimable,
+    required this.done,
+    required this.total,
+    required this.onAchievements,
+    required this.onSettings,
+  });
+
+  final bool claimable;
+  final int done;
+  final int total;
+  final VoidCallback onAchievements;
+  final VoidCallback onSettings;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: AppColors.panelGradient,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        border: Border(top: BorderSide(color: AppColors.goldDim, width: 1.2)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 14),
+            const Center(child: OrnateLabel('メニュー')),
+            const SizedBox(height: 10),
+            _row(
+              icon: Icons.emoji_events,
+              color: AppColors.gold,
+              title: 'あしあと',
+              detail: '$done / $total 達成',
+              dot: claimable,
+              onTap: onAchievements,
+            ),
+            _row(
+              icon: Icons.settings,
+              color: AppColors.textMuted,
+              title: '設定',
+              detail: '音、戦闘の速さ、記録',
+              dot: false,
+              onTap: onSettings,
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _row({
+    required IconData icon,
+    required Color color,
+    required String title,
+    required String detail,
+    required bool dot,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(22, 14, 18, 14),
+          child: Row(
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(icon, size: 22, color: color),
+                  if (dot)
+                    const Positioned(top: -4, right: -4, child: UnreadDot()),
+                ],
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    Text(
+                      detail,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right,
+                size: 20,
+                color: AppColors.textMuted,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
